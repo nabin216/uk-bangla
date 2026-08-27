@@ -1,7 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  output: "export",
+  basePath: process.env.GITHUB_ACTIONS ? "/uk-bangla" : undefined,
+  assetPrefix: process.env.GITHUB_ACTIONS ? "/uk-bangla/" : undefined,
+  trailingSlash: true,
+  images: {
+    unoptimized: true,
+  },
 };
 
 export default nextConfig;
