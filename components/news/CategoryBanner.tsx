@@ -1,0 +1,2 @@
+import { useLanguage } from "@/context/LanguageContext";
+export default function CategoryBanner({ category, onReset }: { category: string; onReset: () => void }) { const { t } = useLanguage(); return category === "All" ? null : <div className="mb-6 flex justify-between rounded-r border-l-4 border-blue-800 bg-blue-50 p-3 text-xs font-bold uppercase text-blue-800 dark:bg-slate-800 dark:text-amber-400"><span>{t("category")} {category}</span><button onClick={onReset}>✕ {t("reset")}</button></div>; }

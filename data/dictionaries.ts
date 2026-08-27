@@ -1,0 +1,36 @@
+import type { Language, Translation } from "@/types";
+
+export const dictionaries: Record<Language, Translation> = {
+  en: {
+    menu: "Menu", saved: "Saved", home: "Home", uk: "UK", bangladesh: "Bangladesh",
+    world: "World", business: "Business", culture: "Culture", opinion: "Opinion",
+    breaking: "BREAKING", search: "Search news...", lead: "Lead Story",
+    readFull: "Read Full Story", politics: "Politics", sports: "Sports",
+    lifestyle: "Lifestyle", viewAll: "VIEW ALL", remittance: "Remittance Calculator",
+    rate: "Live GBP to BDT Transfer Rate", rateSub: "Updated hourly from central bank indexes with zero commission benchmark.",
+    send: "You Send (GBP £)", receive: "Recipient Gets (BDT ৳)", poll: "Reader Poll",
+    opinionHeading: "Opinion & Voices", category: "Category:", reset: "Reset",
+    savedArticles: "Saved Articles", noSaved: "No saved articles yet.", mostRead: "Most Read Stories",
+    dailyBrief: "THE DAILY BRIEF", stayInformed: "STAY INFORMED",
+    newsletterSub: "Get the essential headlines delivered straight to your inbox every morning.",
+    email: "Your email address", subscribe: "SUBSCRIBE", subscribed: "Thank you for subscribing!",
+    footer: "Independent reporting dedicated to the British-Bangladeshi community worldwide. Standard of integrity, accuracy, and depth.",
+    listen: "Listen", stop: "Stop",
+  },
+  bn: {
+    menu: "মেনু", saved: "সংরক্ষিত", home: "হোম", uk: "যুক্তরাজ্য", bangladesh: "বাংলাদেশ",
+    world: "বিশ্ব", business: "বাণিজ্য", culture: "সংস্কৃতি", opinion: "মতামত",
+    breaking: "জরুরি সংবাদ", search: "সংবাদ খুঁজুন...", lead: "প্রধান খবর",
+    readFull: "বিস্তারিত পড়ুন", politics: "রাজনীতি", sports: "খেলাধুলা",
+    lifestyle: "জীবনযাপন", viewAll: "সবগুলো দেখুন", remittance: "রেমিট্যান্স ক্যালকুলেটর",
+    rate: "লাইভ পাউন্ড থেকে টাকা বিনিময় হার", rateSub: "কেন্দ্রীয় ব্যাংকের তথ্য অনুযায়ী প্রতি ঘণ্টায় হালনাগাদকৃত।",
+    send: "আপনি পাঠাচ্ছেন (পাউন্ড £)", receive: "প্রাপক পাবেন (টাকা ৳)", poll: "পাঠক জরিপ",
+    opinionHeading: "মতামত ও বিশ্লেষণ", category: "ক্যাটাগরি:", reset: "পুনরায় সেট",
+    savedArticles: "সংরক্ষিত নিবন্ধসমূহ", noSaved: "এখনো কোনো নিবন্ধ সংরক্ষিত নেই।", mostRead: "সবচেয়ে পঠিত খবর",
+    dailyBrief: "ডেইলি ব্রিফ", stayInformed: "সচেতন থাকুন",
+    newsletterSub: "প্রতিদিন সকালে প্রধান গুরুত্বপূর্ণ শিরোনামগুলো সরাসরি আপনার ইনবক্সে পান।",
+    email: "আপনার ইমেইল ঠিকানা", subscribe: "সাবস্ক্রাইব", subscribed: "সাবস্ক্রাইব করার জন্য ধন্যবাদ!",
+    footer: "বিশ্বব্যাপী ব্রিটিশ-বাংলাদেশি সম্প্রদায়ের জন্য স্বাধীন সাংবাদিকতা। বস্তুনিষ্ঠতা ও পেশাদারিত্বের অঙ্গীকার।",
+    listen: "শুনুন", stop: "বন্ধ করুন",
+  },
+};
