@@ -8,6 +8,7 @@ export type Story = {
   author: string;
   date: string;
   image: string;
+  sourceUrl?: string;
   title: LocalizedText;
   body: LocalizedText;
   section?: string;

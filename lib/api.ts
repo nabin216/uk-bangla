@@ -1,6 +1,7 @@
 import type { Story } from "@/types";
 
-export const API_URL = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
+const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+export const API_URL = (configuredApiUrl || (process.env.NODE_ENV === "development" ? "http://localhost:8000" : "")).replace(/\/$/, "");
 
 type ApiArticle = {
   id: number | string;
@@ -12,6 +13,7 @@ type ApiArticle = {
   author: { name_en?: string; name_bn?: string };
   date?: string;
   image?: string | null;
+  source_url?: string;
 };
 
 export function toStory(article: ApiArticle): Story {
@@ -22,6 +24,7 @@ export function toStory(article: ApiArticle): Story {
     author: article.author?.name_en || "UK Bangla Guardian",
     date: article.date ? new Date(article.date).toLocaleDateString("en-GB") : "",
     image: article.image || "/uk-bangla-guardian-logo-1.png",
+    sourceUrl: article.source_url,
     title: article.title,
     body: {
       en: article.excerpt?.en || article.body.en,
