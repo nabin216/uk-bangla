@@ -5,12 +5,15 @@ export type LocalizedText = Record<Language, string>;
 export type Story = {
   id: string;
   category: string;
+  categoryBn?: string;
   author: string;
+  authorBn?: string;
   date: string;
   image: string;
   sourceUrl?: string;
   title: LocalizedText;
   body: LocalizedText;
+  excerpt?: LocalizedText;
   section?: string;
 };
 

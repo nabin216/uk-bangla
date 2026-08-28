@@ -1,14 +1,13 @@
 import type { Story } from "@/types";
 
-const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-export const API_URL = (configuredApiUrl || (process.env.NODE_ENV === "development" ? "http://localhost:8000" : "")).replace(/\/$/, "");
+export const API_URL = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
 
 type ApiArticle = {
   id: number | string;
   slug: string;
-  title: { en: string; bn: string };
+  title: { en: string; bn?: string };
   excerpt?: { en: string; bn: string };
-  body: { en: string; bn: string };
+  body: { en: string; bn?: string };
   category: { name: string; name_bn?: string; slug: string };
   author: { name_en?: string; name_bn?: string };
   date?: string;
@@ -17,18 +16,25 @@ type ApiArticle = {
 };
 
 export function toStory(article: ApiArticle): Story {
+  const image = article.image && article.image.startsWith("/") ? `${API_URL}${article.image}` : article.image;
   return {
     id: article.slug || String(article.id),
     category: article.category?.name || "News",
+    categoryBn: article.category?.name_bn || article.category?.name || "News",
     section: article.category?.slug,
     author: article.author?.name_en || "UK Bangla Guardian",
+    authorBn: article.author?.name_bn || article.author?.name_en || "UK Bangla Guardian",
     date: article.date ? new Date(article.date).toLocaleDateString("en-GB") : "",
-    image: article.image || "/uk-bangla-guardian-logo-1.png",
+    image: image || "/uk-bangla-guardian-logo-1.png",
     sourceUrl: article.source_url,
-    title: article.title,
+    title: { en: article.title?.en || "", bn: article.title?.bn || article.title?.en || "" },
     body: {
-      en: article.excerpt?.en || article.body.en,
-      bn: article.excerpt?.bn || article.body.bn,
+      en: article.body?.en || article.excerpt?.en || "",
+      bn: article.body?.bn || article.body?.en || article.excerpt?.bn || "",
+    },
+    excerpt: {
+      en: article.excerpt?.en || article.body?.en || "",
+      bn: article.excerpt?.bn || article.body?.bn || article.body?.en || "",
     },
   };
 }
@@ -63,5 +69,8 @@ export async function submitNewsletter(email: string) {
     headers: { "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify({ email }),
   });
-  if (!response.ok) throw new Error("Subscription failed");
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null);
+    throw new Error(payload?.detail || `Subscription failed (${response.status})`);
+  }
 }
