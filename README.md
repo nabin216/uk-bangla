@@ -2,6 +2,11 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+Copy `.env.example` to `.env.local` and set `NEXT_PUBLIC_API_URL` to the
+backend origin (for example `http://localhost:8000`). API requests run in the
+browser, so the static GitHub Pages build remains usable and falls back to
+bundled stories when the backend is unavailable.
+
 First, run the development server:
 
 ```bash
