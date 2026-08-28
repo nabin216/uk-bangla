@@ -1,5 +1,0 @@
-Django>=5.1,<6.0
-wagtail>=6.3,<7.0
-django-cors-headers>=4.4,<5.0
-python-dotenv>=1.0,<2.0
-Pillow>=10.0
