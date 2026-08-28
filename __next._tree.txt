@@ -1,2 +1,2 @@
 :HL["/uk-bangla/_next/static/chunks/1ojgwgrn0g0hc.css","style"]
-0:{"tree":{"name":"","param":null,"prefetchHints":4176,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}},"staleTime":300,"buildId":"h7Uyua3ZHxDuk5mGHRQ1u"}
+0:{"tree":{"name":"","param":null,"prefetchHints":4176,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}},"staleTime":300,"buildId":"mX4_ZF25BA2eLcEywU5Bg"}
