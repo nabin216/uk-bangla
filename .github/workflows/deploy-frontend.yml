@@ -1,0 +1,48 @@
+name: Deploy frontend
+
+# Only needed if you host the static site on the Hetzner box.
+# If you use Cloudflare Pages, delete this file and let Pages build from the repo.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/deploy-frontend.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-frontend
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build static export
+        working-directory: frontend
+        env:
+          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
+        run: npm run build
+
+      - name: Rsync to server
+        uses: burnett01/rsync-deployments@7.0.2
+        with:
+          switches: -avzr --delete
+          path: frontend/out/
+          remote_path: /var/www/ukbangla/
+          remote_host: ${{ secrets.HETZNER_HOST }}
+          remote_user: ${{ secrets.HETZNER_USER }}
+          remote_key: ${{ secrets.HETZNER_SSH_KEY }}

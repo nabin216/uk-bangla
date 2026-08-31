@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"import django, wagtail; print\\('django', django.__version__\\); print\\('wagtail', wagtail.__version__\\)\")",
+      "Bash(python manage.py showmigrations news)",
+      "Bash(python -c \"from wagtail.contrib.settings.models import BaseGenericSetting; from wagtail.rich_text import expand_db_html; print\\('ok'\\)\")"
+    ]
+  }
+}
