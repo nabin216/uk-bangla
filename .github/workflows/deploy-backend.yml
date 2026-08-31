@@ -22,4 +22,4 @@ jobs:
           host: ${{ secrets.HETZNER_HOST }}
           username: ${{ secrets.HETZNER_USER }}
           key: ${{ secrets.HETZNER_SSH_KEY }}
-          script: /srv/ukbangla/backend/deploy/deploy.sh
+          script: bash /srv/ukbangla/backend/deploy/deploy.sh
