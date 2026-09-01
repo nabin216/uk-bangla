@@ -69,7 +69,7 @@ export default function Footer() {
   return (
     <footer className="border-t-4 border-amber-400 bg-[#102f57] px-4 py-12 text-white">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-10 grid gap-10 md:grid-cols-[1.5fr_1fr_1fr_1fr]">
+        <div className="mb-10 grid gap-x-8 gap-y-10 md:grid-cols-2 lg:grid-cols-[1.4fr_0.9fr_1.1fr_1.4fr]">
           <div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo.png" alt="UK Bangla Guardian" className="h-16 w-auto rounded-md bg-white/5 p-1.5" />
@@ -79,6 +79,21 @@ export default function Footer() {
                 {badge}
               </span>
             )}
+            <div className="mt-5 flex flex-wrap gap-3">
+              {social.map((item) => (
+                <a
+                  key={item.label}
+                  href={item.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={item.label}
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-blue-300/40 text-sm text-blue-100 transition hover:border-amber-300 hover:text-amber-300"
+                >
+                  {item.glyph}
+                </a>
+              ))}
+            </div>
+            <p className="mt-3 text-xs leading-relaxed text-blue-200">{tagline}</p>
           </div>
 
           <div>
@@ -107,47 +122,22 @@ export default function Footer() {
             </ul>
           </div>
 
-          <div>
-            <h3 className="border-b border-blue-300/30 pb-2 text-xs font-bold uppercase tracking-widest text-amber-300">
-              {language === "bn" ? "আমাদের অনুসরণ করুন" : "Follow Us"}
-            </h3>
-            <div className="mt-4 flex flex-wrap gap-3">
-              {social.map((item) => (
-                <a
-                  key={item.label}
-                  href={item.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label={item.label}
-                  className="flex h-9 w-9 items-center justify-center rounded-full border border-blue-300/40 text-sm text-blue-100 transition hover:border-amber-300 hover:text-amber-300"
-                >
-                  {item.glyph}
-                </a>
-              ))}
-            </div>
-            <p className="mt-4 text-xs leading-relaxed text-blue-200">{tagline}</p>
-          </div>
-        </div>
-
-        {masthead.length > 0 && (
-          <div className="mb-10 border-t border-blue-300/30 pt-8">
-            <h3 className="mb-5 text-xs font-bold uppercase tracking-widest text-amber-300">
-              {language === "bn" ? "সম্পাদকীয় পরিষদ" : "Editorial Team"}
-            </h3>
-            <div className="grid gap-x-8 gap-y-5 text-sm sm:grid-cols-2 lg:grid-cols-3">
-              {masthead.map((group) => (
-                <div key={group.role}>
-                  <div className="text-[11px] font-bold uppercase tracking-wider text-blue-300">{group.role}</div>
-                  <div className="mt-1.5 space-y-1 text-blue-100">
-                    {group.names.map((name) => (
-                      <div key={name}>{name}</div>
-                    ))}
+          {masthead.length > 0 && (
+            <div>
+              <h3 className="border-b border-blue-300/30 pb-2 text-xs font-bold uppercase tracking-widest text-amber-300">
+                {language === "bn" ? "সম্পাদকীয় পরিষদ" : "Editorial Team"}
+              </h3>
+              <div className="mt-4 space-y-3 text-sm">
+                {masthead.map((group) => (
+                  <div key={group.role}>
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-blue-300">{group.role}</div>
+                    <div className="text-blue-100">{group.names.join(", ")}</div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         <div className="flex flex-col justify-between gap-3 border-t border-blue-300/30 pt-6 text-xs text-blue-200 sm:flex-row">
           <span>{copyright}</span>
