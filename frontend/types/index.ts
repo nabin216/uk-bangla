@@ -75,6 +75,12 @@ export type SiteChrome = {
     footer_badge: LocalizedText;
     copyright: LocalizedText;
     newsletter_footnote: LocalizedText;
+    contact: {
+      heading: LocalizedText;
+      address: string[];
+      emails: string[];
+      phones: string[];
+    };
     home_headings: HomeHeadings;
     header_banner: HeaderBanner;
   };

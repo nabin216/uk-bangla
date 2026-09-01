@@ -389,6 +389,11 @@ class Command(BaseCommand):
         settings_obj.home_more_heading_bn = "গার্ডিয়ান থেকে আরও"
         settings_obj.home_opinion_heading_en = "Opinion & voices"
         settings_obj.home_opinion_heading_bn = "মতামত ও বিশ্লেষণ"
+        settings_obj.contact_heading_en = "Editorial Contact"
+        settings_obj.contact_heading_bn = "সম্পাদকীয় যোগাযোগ"
+        settings_obj.contact_address = "Clifton Trade Centre\n4-6 Greatorex Street\n1st Floor, Room no: M1"
+        settings_obj.contact_emails = "Ukbanglaguardian@gmail.com\njtimesnews@gmail.com"
+        settings_obj.contact_phones = "+44 7984 102788\n+44 7415 276220"
         settings_obj.save()
 
         for order, (label_en, label_bn, url) in enumerate(MENU):

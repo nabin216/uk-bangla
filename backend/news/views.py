@@ -155,6 +155,12 @@ def site(request):
             "footer_badge": dual(settings_obj.footer_badge_en, settings_obj.footer_badge_bn),
             "copyright": dual(settings_obj.copyright_en, settings_obj.copyright_bn),
             "newsletter_footnote": dual(settings_obj.newsletter_footnote_en, settings_obj.newsletter_footnote_bn),
+            "contact": {
+                "heading": dual(settings_obj.contact_heading_en, settings_obj.contact_heading_bn),
+                "address": [ln.strip() for ln in settings_obj.contact_address.splitlines() if ln.strip()],
+                "emails": [ln.strip() for ln in settings_obj.contact_emails.splitlines() if ln.strip()],
+                "phones": [ln.strip() for ln in settings_obj.contact_phones.splitlines() if ln.strip()],
+            },
             "home_headings": {
                 "lead": dual(settings_obj.home_lead_heading_en, settings_obj.home_lead_heading_bn),
                 "across": dual(settings_obj.home_across_heading_en, settings_obj.home_across_heading_bn),

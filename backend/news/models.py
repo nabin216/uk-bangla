@@ -296,6 +296,12 @@ class SiteSettings(BaseGenericSetting):
     newsletter_footnote_en = models.CharField(max_length=160, blank=True)
     newsletter_footnote_bn = models.CharField(max_length=160, blank=True)
 
+    contact_heading_en = models.CharField(max_length=80, blank=True, default="Editorial Contact")
+    contact_heading_bn = models.CharField(max_length=80, blank=True, default="সম্পাদকীয় যোগাযোগ")
+    contact_address = models.TextField(blank=True, help_text="One line per line")
+    contact_emails = models.TextField(blank=True, help_text="One email address per line")
+    contact_phones = models.TextField(blank=True, help_text="One phone number per line")
+
     home_lead_heading_en = models.CharField(max_length=120, blank=True)
     home_lead_heading_bn = models.CharField(max_length=120, blank=True)
     home_across_heading_en = models.CharField(max_length=120, blank=True)
@@ -320,6 +326,10 @@ class SiteSettings(BaseGenericSetting):
             FieldPanel("weather_london"), FieldPanel("weather_dhaka"), FieldPanel("gbp_to_bdt_rate"),
             FieldPanel("fx_trend_note_en"), FieldPanel("fx_trend_note_bn"),
         ], heading="Status strip & remittance"),
+        MultiFieldPanel([
+            FieldPanel("contact_heading_en"), FieldPanel("contact_heading_bn"),
+            FieldPanel("contact_address"), FieldPanel("contact_emails"), FieldPanel("contact_phones"),
+        ], heading="Editorial contact"),
         MultiFieldPanel([
             FieldPanel("footer_blurb_en"), FieldPanel("footer_blurb_bn"),
             FieldPanel("footer_badge_en"), FieldPanel("footer_badge_bn"),

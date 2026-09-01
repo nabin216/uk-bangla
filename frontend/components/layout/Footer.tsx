@@ -41,6 +41,7 @@ export default function Footer() {
   const badge = pick(s?.footer_badge, "Independent · Accurate · Essential");
   const copyright = pick(s?.copyright, "© 2026 UK Bangla Guardian. All rights reserved.");
   const tagline = pick(s?.tagline, "News for the British-Bangladeshi community, wherever you are.");
+  const contact = s?.contact;
 
   const masthead: { role: string; names: string[] }[] = [];
   for (const m of site?.masthead ?? []) {
@@ -69,7 +70,7 @@ export default function Footer() {
   return (
     <footer className="border-t-4 border-amber-400 bg-[#102f57] px-4 py-12 text-white">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-10 grid gap-x-8 gap-y-10 md:grid-cols-2 lg:grid-cols-[1.4fr_0.9fr_1.1fr_1.4fr]">
+        <div className="mb-10 grid gap-x-8 gap-y-10 md:grid-cols-2 lg:grid-cols-[1.3fr_0.8fr_1.1fr_1.3fr_1.1fr]">
           <div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo.png" alt="UK Bangla Guardian" className="h-16 w-auto rounded-md bg-white/5 p-1.5" />
@@ -134,6 +135,35 @@ export default function Footer() {
                     <div className="text-blue-100">{group.names.join(", ")}</div>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {contact && (contact.address.length > 0 || contact.emails.length > 0 || contact.phones.length > 0) && (
+            <div>
+              <h3 className="border-b border-blue-300/30 pb-2 text-xs font-bold uppercase tracking-widest text-amber-300">
+                {contact.heading?.[language] || contact.heading?.en || (language === "bn" ? "সম্পাদকীয় যোগাযোগ" : "Editorial Contact")}
+              </h3>
+              <div className="mt-4 space-y-3 text-sm text-blue-100">
+                {contact.address.length > 0 && (
+                  <address className="not-italic leading-relaxed">
+                    {contact.address.map((line) => <div key={line}>{line}</div>)}
+                  </address>
+                )}
+                {contact.emails.length > 0 && (
+                  <div className="space-y-1">
+                    {contact.emails.map((mail) => (
+                      <a key={mail} href={`mailto:${mail}`} className="block break-all transition hover:text-amber-300">{mail}</a>
+                    ))}
+                  </div>
+                )}
+                {contact.phones.length > 0 && (
+                  <div className="space-y-1">
+                    {contact.phones.map((phone) => (
+                      <a key={phone} href={`tel:${phone.replace(/[^\d+]/g, "")}`} className="block transition hover:text-amber-300">{phone}</a>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
