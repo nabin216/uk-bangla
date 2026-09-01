@@ -44,6 +44,13 @@ export type HomeHeadings = {
   opinion: LocalizedText;
 };
 
+export type HeaderBanner = {
+  enabled: boolean;
+  image: string | null;
+  link: string;
+  alt: string;
+};
+
 export type SiteChrome = {
   menu: NavLink[];
   settings: {
@@ -54,6 +61,7 @@ export type SiteChrome = {
     weather_dhaka: string;
     gbp_to_bdt_rate: number;
     home_headings: HomeHeadings;
+    header_banner: HeaderBanner;
   };
 };
 

@@ -284,6 +284,12 @@ class SiteSettings(BaseGenericSetting):
     home_opinion_heading_en = models.CharField(max_length=120, blank=True)
     home_opinion_heading_bn = models.CharField(max_length=120, blank=True)
 
+    header_banner_enabled = models.BooleanField(default=False, help_text="Show the banner beside the logo in the header")
+    header_banner = models.ForeignKey(get_image_model_string(), null=True, blank=True, on_delete=models.SET_NULL, related_name="+", help_text="Recommended 970×90 or 728×90")
+    header_banner_image_url = models.URLField(blank=True, help_text="External image URL, used if no image is uploaded")
+    header_banner_link = models.URLField(blank=True, help_text="Where the banner links to when clicked")
+    header_banner_alt = models.CharField(max_length=150, blank=True, default="Advertisement")
+
     panels = [
         MultiFieldPanel([
             FieldPanel("brand_name"), FieldPanel("brand_kicker"), FieldPanel("brand_name_bn"),
@@ -305,6 +311,13 @@ class SiteSettings(BaseGenericSetting):
             FieldPanel("home_more_heading_en"), FieldPanel("home_more_heading_bn"),
             FieldPanel("home_opinion_heading_en"), FieldPanel("home_opinion_heading_bn"),
         ], heading="Homepage headings"),
+        MultiFieldPanel([
+            FieldPanel("header_banner_enabled"),
+            FieldPanel("header_banner"),
+            FieldPanel("header_banner_image_url"),
+            FieldPanel("header_banner_link"),
+            FieldPanel("header_banner_alt"),
+        ], heading="Header banner / advertisement"),
     ]
 
     class Meta:

@@ -125,8 +125,23 @@ def site(request):
     def dual(en, bn):
         return {"en": en, "bn": bn or en}
 
+    banner_image = None
+    if settings_obj.header_banner:
+        try:
+            banner_image = settings_obj.header_banner.get_rendition("width-1200").url
+        except Exception:
+            banner_image = settings_obj.header_banner.file.url
+    elif settings_obj.header_banner_image_url:
+        banner_image = settings_obj.header_banner_image_url
+
     return JsonResponse({
         "settings": {
+            "header_banner": {
+                "enabled": bool(settings_obj.header_banner_enabled and banner_image),
+                "image": banner_image,
+                "link": settings_obj.header_banner_link,
+                "alt": settings_obj.header_banner_alt or "Advertisement",
+            },
             "brand_name": settings_obj.brand_name,
             "brand_kicker": settings_obj.brand_kicker,
             "brand_name_bn": settings_obj.brand_name_bn,

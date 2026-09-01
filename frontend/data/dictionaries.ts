@@ -28,7 +28,7 @@ export const dictionaries: Record<Language, Translation> = {
   bn: {
     menu: "মেনু", saved: "সংরক্ষিত", home: "হোম", uk: "যুক্তরাজ্য", bangladesh: "বাংলাদেশ",
     world: "বিশ্ব", business: "বাণিজ্য", culture: "সংস্কৃতি", opinion: "মতামত",
-    breaking: "জরুরি সংবাদ", search: "সংবাদ খুঁজুন...", lead: "প্রধান খবর",
+    breaking: "সর্বশেষ", search: "সংবাদ খুঁজুন...", lead: "প্রধান খবর",
     readFull: "বিস্তারিত পড়ুন", politics: "রাজনীতি", sports: "খেলাধুলা",
     lifestyle: "জীবনযাপন", viewAll: "সবগুলো দেখুন", remittance: "রেমিট্যান্স ক্যালকুলেটর",
     rate: "লাইভ পাউন্ড থেকে টাকা বিনিময় হার", rateSub: "কেন্দ্রীয় ব্যাংকের তথ্য অনুযায়ী প্রতি ঘণ্টায় হালনাগাদকৃত।",
