@@ -10,7 +10,7 @@ from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 from wagtail.rich_text import expand_db_html
 from .models import (
-    ArticlePage, Comment, FooterLink, InfoPage, MastheadMember, MenuItem,
+    ArticlePage, Comment, FooterLink, InfoPage, LiveStatus, MastheadMember, MenuItem,
     NewsletterSubscription, PageView, Poll, Section, SiteSettings, SocialLink,
     TickerItem, TrendingTag,
 )
@@ -126,6 +126,17 @@ def site(request):
     def dual(en, bn):
         return {"en": en, "bn": bn or en}
 
+    weather_london = settings_obj.weather_london
+    weather_dhaka = settings_obj.weather_dhaka
+    fx_rate = float(settings_obj.gbp_to_bdt_rate)
+    if settings_obj.auto_status_strip:
+        live = LiveStatus.objects.filter(pk=1).first()
+        if live:
+            weather_london = live.weather_london or weather_london
+            weather_dhaka = live.weather_dhaka or weather_dhaka
+            if live.gbp_to_bdt_rate:
+                fx_rate = float(live.gbp_to_bdt_rate)
+
     banner_image = None
     if settings_obj.header_banner:
         try:
@@ -147,9 +158,9 @@ def site(request):
             "brand_kicker": settings_obj.brand_kicker,
             "brand_name_bn": settings_obj.brand_name_bn,
             "tagline": dual(settings_obj.tagline_en, settings_obj.tagline_bn),
-            "weather_london": settings_obj.weather_london,
-            "weather_dhaka": settings_obj.weather_dhaka,
-            "gbp_to_bdt_rate": float(settings_obj.gbp_to_bdt_rate),
+            "weather_london": weather_london,
+            "weather_dhaka": weather_dhaka,
+            "gbp_to_bdt_rate": fx_rate,
             "fx_trend_note": dual(settings_obj.fx_trend_note_en, settings_obj.fx_trend_note_bn),
             "footer_blurb": dual(settings_obj.footer_blurb_en, settings_obj.footer_blurb_bn),
             "footer_badge": dual(settings_obj.footer_badge_en, settings_obj.footer_badge_bn),

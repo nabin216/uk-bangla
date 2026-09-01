@@ -368,6 +368,7 @@ class Command(BaseCommand):
         settings_obj.brand_name_bn = "ইউকে বাংলা গার্ডিয়ান"
         settings_obj.tagline_en = "Leading the voice of the British-Bangladeshi community."
         settings_obj.tagline_bn = "ব্রিটিশ-বাংলাদেশি সম্প্রদায়ের অগ্রণী কণ্ঠস্বর।"
+        settings_obj.auto_status_strip = True
         settings_obj.weather_london = "☁ London 18°C"
         settings_obj.weather_dhaka = "☀ Dhaka 31°C"
         settings_obj.gbp_to_bdt_rate = "152.50"

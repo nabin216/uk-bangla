@@ -74,6 +74,25 @@ class Comment(models.Model):
     def __str__(self):
         return f"{self.name} on {self.article_id}"
 
+class LiveStatus(models.Model):
+    """Auto-fetched weather + FX for the header status strip (single row, pk=1)."""
+    weather_london = models.CharField(max_length=60, blank=True)
+    weather_dhaka = models.CharField(max_length=60, blank=True)
+    gbp_to_bdt_rate = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    fetched_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "live status strip"
+        verbose_name_plural = "live status strip"
+
+    def __str__(self):
+        return f"Live status (updated {self.fetched_at:%Y-%m-%d %H:%M})" if self.fetched_at else "Live status (never fetched)"
+
+    @classmethod
+    def current(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
 class PageView(models.Model):
     path = models.CharField(max_length=300)
     article = models.ForeignKey("ArticlePage", null=True, blank=True, on_delete=models.SET_NULL, related_name="views")
@@ -281,6 +300,7 @@ class SiteSettings(BaseGenericSetting):
     tagline_en = models.CharField(max_length=200, blank=True)
     tagline_bn = models.CharField(max_length=200, blank=True)
 
+    auto_status_strip = models.BooleanField(default=False, help_text="Auto-update weather + exchange rate from the internet (run 'refresh_live_status' on a schedule). When off, the values below are used as typed.")
     weather_london = models.CharField(max_length=60, default="☁ London 18°C", blank=True)
     weather_dhaka = models.CharField(max_length=60, default="☀ Dhaka 31°C", blank=True)
     gbp_to_bdt_rate = models.DecimalField(max_digits=8, decimal_places=2, default=152.50)
@@ -323,6 +343,7 @@ class SiteSettings(BaseGenericSetting):
             FieldPanel("tagline_en"), FieldPanel("tagline_bn"),
         ], heading="Masthead"),
         MultiFieldPanel([
+            FieldPanel("auto_status_strip"),
             FieldPanel("weather_london"), FieldPanel("weather_dhaka"), FieldPanel("gbp_to_bdt_rate"),
             FieldPanel("fx_trend_note_en"), FieldPanel("fx_trend_note_bn"),
         ], heading="Status strip & remittance"),
