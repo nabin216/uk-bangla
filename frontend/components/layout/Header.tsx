@@ -49,6 +49,14 @@ export default function Header({ onSaved, dark, onTheme }: Props) {
     banner?.enabled && banner.image
       ? banner.image.startsWith("/") ? `${API_URL}${banner.image}` : banner.image
       : null;
+  const bannerImg = bannerSrc ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={bannerSrc}
+      alt={banner?.alt ?? "Advertisement"}
+      className="mx-auto h-auto w-full max-w-[970px] object-contain sm:h-16 sm:w-auto lg:h-[90px]"
+    />
+  ) : null;
 
   return (
     <header className="block border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
@@ -64,22 +72,16 @@ export default function Header({ onSaved, dark, onTheme }: Props) {
           </div>
         </div>
       </div>
-      <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-4 sm:gap-8">
+      <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-4 py-4 sm:flex-row sm:gap-8">
         <Link href="/" aria-label="UK Bangla Guardian — home" className="shrink-0">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo.png" alt="UK Bangla Guardian" className="h-12 w-auto sm:h-[4.25rem]" />
         </Link>
-        {bannerSrc && (
-          <div className="ml-auto hidden min-w-0 sm:block">
+        {bannerImg && (
+          <div className="w-full min-w-0 sm:ml-auto sm:w-auto">
             {banner?.link ? (
-              <a href={banner.link} target="_blank" rel="noreferrer sponsored" aria-label={banner.alt}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={bannerSrc} alt={banner.alt} className="h-16 w-auto max-w-full object-contain lg:h-[90px]" />
-              </a>
-            ) : (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img src={bannerSrc} alt={banner?.alt ?? "Advertisement"} className="h-16 w-auto max-w-full object-contain lg:h-[90px]" />
-            )}
+              <a href={banner.link} target="_blank" rel="noreferrer sponsored" aria-label={banner.alt}>{bannerImg}</a>
+            ) : bannerImg}
           </div>
         )}
       </div>
