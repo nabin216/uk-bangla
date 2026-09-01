@@ -98,7 +98,7 @@ export default function Footer() {
             <h3 className="border-b border-blue-300/30 pb-2 text-xs font-bold uppercase tracking-widest text-amber-300">
               {language === "bn" ? "বিভাগ" : "Categories"}
             </h3>
-            <ul className="mt-4 space-y-3 text-sm text-blue-100">
+            <ul className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-blue-100">
               {categories.map((cat) => (
                 <li key={cat.url}>
                   <Link href={cat.url} className="transition hover:text-amber-300">{cat.label}</Link>
