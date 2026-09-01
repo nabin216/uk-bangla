@@ -10,8 +10,9 @@ from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 from wagtail.rich_text import expand_db_html
 from .models import (
-    ArticlePage, Comment, FooterLink, InfoPage, MenuItem, NewsletterSubscription,
-    PageView, Poll, Section, SiteSettings, SocialLink, TickerItem, TrendingTag,
+    ArticlePage, Comment, FooterLink, InfoPage, MastheadMember, MenuItem,
+    NewsletterSubscription, PageView, Poll, Section, SiteSettings, SocialLink,
+    TickerItem, TrendingTag,
 )
 
 
@@ -170,6 +171,10 @@ def site(request):
             for link in FooterLink.objects.all()
         ],
         "sections": [section_json(s) for s in Section.objects.all()],
+        "masthead": [
+            {"role": dual(m.role_en, m.role_bn), "name": dual(m.name_en, m.name_bn)}
+            for m in MastheadMember.objects.all()
+        ],
     })
 
 @csrf_exempt

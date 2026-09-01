@@ -236,6 +236,27 @@ class PollOption(Orderable):
         return self.label_en
 
 @register_snippet
+class MastheadMember(models.Model):
+    role_en = models.CharField(max_length=120)
+    role_bn = models.CharField(max_length=120, blank=True)
+    name_en = models.CharField(max_length=150)
+    name_bn = models.CharField(max_length=150, blank=True)
+    sort_order = models.PositiveIntegerField(default=0)
+
+    panels = [
+        FieldPanel("role_en"), FieldPanel("role_bn"),
+        FieldPanel("name_en"), FieldPanel("name_bn"),
+        FieldPanel("sort_order"),
+    ]
+
+    class Meta:
+        ordering = ["sort_order", "id"]
+        verbose_name = "masthead / editorial team member"
+
+    def __str__(self):
+        return f"{self.role_en}: {self.name_en}"
+
+@register_snippet
 class InfoPage(models.Model):
     slug = models.SlugField(unique=True, help_text="about, contact, privacy, …")
     title_en = models.CharField(max_length=150)

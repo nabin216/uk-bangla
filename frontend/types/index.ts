@@ -54,12 +54,14 @@ export type HeaderBanner = {
 export type SocialLink = { label: string; url: string; glyph: string };
 export type FooterLink = { column: string; label: LocalizedText; url: string };
 export type SiteSection = { id: number; name: string; name_bn: string; slug: string };
+export type MastheadMember = { role: LocalizedText; name: LocalizedText };
 
 export type SiteChrome = {
   menu: NavLink[];
   social: SocialLink[];
   footer_links: FooterLink[];
   sections: SiteSection[];
+  masthead: MastheadMember[];
   settings: {
     brand_name: string;
     brand_kicker: string;

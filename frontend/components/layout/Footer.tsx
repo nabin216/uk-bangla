@@ -42,6 +42,15 @@ export default function Footer() {
   const copyright = pick(s?.copyright, "© 2026 UK Bangla Guardian. All rights reserved.");
   const tagline = pick(s?.tagline, "News for the British-Bangladeshi community, wherever you are.");
 
+  const masthead: { role: string; names: string[] }[] = [];
+  for (const m of site?.masthead ?? []) {
+    const role = m.role[language] || m.role.en;
+    const name = m.name[language] || m.name.en;
+    const last = masthead[masthead.length - 1];
+    if (last && last.role === role) last.names.push(name);
+    else masthead.push({ role, names: [name] });
+  }
+
   const explore = site?.footer_links?.filter((l) => l.column === "explore") ?? [];
   const legal = site?.footer_links?.filter((l) => l.column === "legal") ?? [];
   const exploreLinks = explore.length ? explore : FALLBACK_EXPLORE;
@@ -119,6 +128,26 @@ export default function Footer() {
             <p className="mt-4 text-xs leading-relaxed text-blue-200">{tagline}</p>
           </div>
         </div>
+
+        {masthead.length > 0 && (
+          <div className="mb-10 border-t border-blue-300/30 pt-8">
+            <h3 className="mb-5 text-xs font-bold uppercase tracking-widest text-amber-300">
+              {language === "bn" ? "সম্পাদকীয় পরিষদ" : "Editorial Team"}
+            </h3>
+            <div className="grid gap-x-8 gap-y-5 text-sm sm:grid-cols-2 lg:grid-cols-3">
+              {masthead.map((group) => (
+                <div key={group.role}>
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-blue-300">{group.role}</div>
+                  <div className="mt-1.5 space-y-1 text-blue-100">
+                    {group.names.map((name) => (
+                      <div key={name}>{name}</div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-col justify-between gap-3 border-t border-blue-300/30 pt-6 text-xs text-blue-200 sm:flex-row">
           <span>{copyright}</span>

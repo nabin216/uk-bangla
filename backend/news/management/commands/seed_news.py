@@ -7,8 +7,8 @@ from django.utils.text import slugify
 from wagtail.models import Page
 
 from news.models import (
-    ArticlePage, Author, Comment, FooterLink, InfoPage, MenuItem, PageView, Poll, PollOption,
-    Section, SiteSettings, SocialLink, TickerItem, TrendingTag,
+    ArticlePage, Author, Comment, FooterLink, InfoPage, MastheadMember, MenuItem, PageView,
+    Poll, PollOption, Section, SiteSettings, SocialLink, TickerItem, TrendingTag,
 )
 
 SECTIONS = [
@@ -290,6 +290,20 @@ FOOTER_LINKS = [
     ("legal", "Contact", "যোগাযোগ", "/contact"),
 ]
 
+# (role_en, role_bn, name_en, name_bn)
+MASTHEAD = [
+    ("Editor", "সম্পাদক", "Muhammed Shahed Rahman", "মুহাম্মদ শাহেদ রাহমান"),
+    ("Special Assignment Editor", "বিশেষ দায়িত্বপ্রাপ্ত সম্পাদক", "Dr Ansar Ahmed Ullah", ""),
+    ("Assistant Editor", "সহকারী সম্পাদক", "Prof Md. Shajidur Rahman", ""),
+    ("Assistant Editor", "সহকারী সম্পাদক", "S. K. M. Ashraful Huda", ""),
+    ("Assistant Editor", "সহকারী সম্পাদক", "Mirza Abul Kashem", ""),
+    ("Managing Editor", "ব্যবস্থাপনা সম্পাদক", "Ruhela Begum Rahman", ""),
+    ("Contributing Reporters", "প্রতিবেদক", "Nahid Jaigirdar", ""),
+    ("Contributing Reporters", "প্রতিবেদক", "Mohammed Saleh Ahmed", ""),
+    ("Contributing Reporters", "প্রতিবেদক", "Abdur Rahim", ""),
+    ("Contributing Reporters", "প্রতিবেদক", "Asadur Zaman Nabin", ""),
+]
+
 INFO_PAGES = [
     ("about", "About UK Bangla Guardian", "উইকে বাংলা গার্ডিয়ান সম্পর্কে",
      "<p>Independent news and essential stories for the British-Bangladeshi community.</p>",
@@ -391,6 +405,12 @@ class Command(BaseCommand):
 
         for order, (column, label_en, label_bn, url) in enumerate(FOOTER_LINKS):
             FooterLink.objects.update_or_create(column=column, label_en=label_en, defaults={"label_bn": label_bn, "url": url, "sort_order": order})
+
+        for order, (role_en, role_bn, name_en, name_bn) in enumerate(MASTHEAD):
+            MastheadMember.objects.update_or_create(
+                name_en=name_en,
+                defaults={"role_en": role_en, "role_bn": role_bn, "name_bn": name_bn, "sort_order": order},
+            )
 
         for slug, title_en, title_bn, body_en, body_bn in INFO_PAGES:
             InfoPage.objects.update_or_create(slug=slug, defaults={"title_en": title_en, "title_bn": title_bn, "body_en": body_en, "body_bn": body_bn})
