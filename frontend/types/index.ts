@@ -51,15 +51,28 @@ export type HeaderBanner = {
   alt: string;
 };
 
+export type SocialLink = { label: string; url: string; glyph: string };
+export type FooterLink = { column: string; label: LocalizedText; url: string };
+export type SiteSection = { id: number; name: string; name_bn: string; slug: string };
+
 export type SiteChrome = {
   menu: NavLink[];
+  social: SocialLink[];
+  footer_links: FooterLink[];
+  sections: SiteSection[];
   settings: {
     brand_name: string;
     brand_kicker: string;
     brand_name_bn: string;
+    tagline: LocalizedText;
     weather_london: string;
     weather_dhaka: string;
     gbp_to_bdt_rate: number;
+    fx_trend_note: LocalizedText;
+    footer_blurb: LocalizedText;
+    footer_badge: LocalizedText;
+    copyright: LocalizedText;
+    newsletter_footnote: LocalizedText;
     home_headings: HomeHeadings;
     header_banner: HeaderBanner;
   };
