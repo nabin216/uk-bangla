@@ -10,7 +10,7 @@ from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 from wagtail.rich_text import expand_db_html
 from .models import (
-    ArticlePage, Comment, FooterLink, InfoPage, LiveStatus, MastheadMember, MenuItem,
+    ArticlePage, Comment, FooterLink, InfoPage, LiveStatus, MastheadMember,
     NewsletterSubscription, PageView, Poll, Section, SiteSettings, SocialLink,
     TickerItem, TrendingTag,
 )
@@ -179,7 +179,12 @@ def site(request):
                 "opinion": dual(settings_obj.home_opinion_heading_en, settings_obj.home_opinion_heading_bn),
             },
         },
-        "menu": [{"label": dual(m.label_en, m.label_bn), "url": m.url} for m in MenuItem.objects.filter(is_active=True)],
+        "menu": (
+            [{"label": {"en": "Home", "bn": "হোম"}, "url": "/"}] if settings_obj.nav_show_home else []
+        ) + [
+            {"label": dual(sec.nav_label_en or sec.name_en, sec.nav_label_bn or sec.name_bn), "url": f"/category/{sec.slug}"}
+            for sec in Section.objects.filter(show_in_nav=True)
+        ],
         "ticker": [dual(t.text_en, t.text_bn) for t in TickerItem.objects.filter(is_active=True)],
         "trending": [t.label for t in TrendingTag.objects.all()],
         "social": [{"label": s.label, "url": s.url, "glyph": s.glyph} for s in SocialLink.objects.all()],

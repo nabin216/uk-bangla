@@ -7,23 +7,24 @@ from django.utils.text import slugify
 from wagtail.models import Page
 
 from news.models import (
-    ArticlePage, Author, Comment, FooterLink, InfoPage, MastheadMember, MenuItem, PageView,
+    ArticlePage, Author, Comment, FooterLink, InfoPage, MastheadMember, PageView,
     Poll, PollOption, Section, SiteSettings, SocialLink, TickerItem, TrendingTag,
 )
 
+# (name_en, name_bn, sort_order, show_in_nav)
 SECTIONS = [
-    ("UK / Bangladesh", "যুক্তরাজ্য-বাংলাদেশ", 0),
-    ("UK", "যুক্তরাজ্য", 1),
-    ("Bangladesh", "বাংলাদেশ", 2),
-    ("World", "বিশ্ব", 3),
-    ("Business", "বাণিজ্য", 4),
-    ("Culture", "সংস্কৃতি", 5),
-    ("Opinion", "মতামত", 6),
-    ("Politics", "রাজনীতি", 7),
-    ("Sports", "খেলাধুলা", 8),
-    ("Lifestyle", "জীবনযাপন", 9),
-    ("Environment", "পরিবেশ", 10),
-    ("Infrastructure", "অবকাঠামো", 11),
+    ("UK / Bangladesh", "যুক্তরাজ্য-বাংলাদেশ", 0, False),
+    ("UK", "যুক্তরাজ্য", 1, True),
+    ("Bangladesh", "বাংলাদেশ", 2, True),
+    ("World", "বিশ্ব", 3, True),
+    ("Business", "বাণিজ্য", 4, True),
+    ("Culture", "সংস্কৃতি", 5, True),
+    ("Opinion", "মতামত", 6, True),
+    ("Politics", "রাজনীতি", 7, False),
+    ("Sports", "খেলাধুলা", 8, False),
+    ("Lifestyle", "জীবনযাপন", 9, False),
+    ("Environment", "পরিবেশ", 10, False),
+    ("Infrastructure", "অবকাঠামো", 11, False),
 ]
 
 AUTHORS = [
@@ -256,16 +257,6 @@ STORIES = [
     },
 ]
 
-MENU = [
-    ("Home", "হোম", "/"),
-    ("UK", "যুক্তরাজ্য", "/category/uk"),
-    ("Bangladesh", "বাংলাদেশ", "/category/bangladesh"),
-    ("World", "বিশ্ব", "/category/world"),
-    ("Business", "বাণিজ্য", "/category/business"),
-    ("Culture", "সংস্কৃতি", "/category/culture"),
-    ("Opinion", "মতামত", "/category/opinion"),
-]
-
 TICKER = [
     ("UK Parliament debates new visa policies", "নতুন ভিসা নীতি নিয়ে যুক্তরাজ্যের সংসদে বিতর্ক"),
     ("Bangladesh foreign direct investment reaches historic peak", "বাংলাদেশে সরাসরি বিদেশি বিনিয়োগ ঐতিহাসিক শিখরে"),
@@ -323,10 +314,10 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         root = Page.get_first_root_node()
 
-        for order, (name_en, name_bn, sort) in enumerate(SECTIONS):
+        for name_en, name_bn, sort, in_nav in SECTIONS:
             Section.objects.update_or_create(
                 slug=slugify(name_en),
-                defaults={"name_en": name_en, "name_bn": name_bn, "sort_order": sort},
+                defaults={"name_en": name_en, "name_bn": name_bn, "sort_order": sort, "show_in_nav": in_nav},
             )
 
         for name_en, name_bn, role_en, role_bn in AUTHORS:
@@ -396,9 +387,6 @@ class Command(BaseCommand):
         settings_obj.contact_emails = "Ukbanglaguardian@gmail.com\njtimesnews@gmail.com"
         settings_obj.contact_phones = "+44 7984 102788\n+44 7415 276220"
         settings_obj.save()
-
-        for order, (label_en, label_bn, url) in enumerate(MENU):
-            MenuItem.objects.update_or_create(url=url, defaults={"label_en": label_en, "label_bn": label_bn, "sort_order": order, "is_active": True})
 
         for order, (text_en, text_bn) in enumerate(TICKER):
             TickerItem.objects.update_or_create(text_en=text_en, defaults={"text_bn": text_bn, "sort_order": order, "is_active": True})

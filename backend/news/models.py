@@ -16,7 +16,16 @@ class Section(models.Model):
     name_bn = models.CharField(max_length=100, blank=True)
     slug = models.SlugField(unique=True)
     description = models.TextField(blank=True)
-    sort_order = models.PositiveIntegerField(default=0)
+    sort_order = models.PositiveIntegerField(default=0, help_text="Order in the header menu and footer")
+    show_in_nav = models.BooleanField(default=False, help_text="Show this section as a link in the header menu")
+    nav_label_en = models.CharField(max_length=60, blank=True, help_text="Optional shorter label for the menu (defaults to the name)")
+    nav_label_bn = models.CharField(max_length=60, blank=True)
+
+    panels = [
+        FieldPanel("name_en"), FieldPanel("name_bn"), FieldPanel("slug"),
+        FieldPanel("description"), FieldPanel("sort_order"),
+        FieldPanel("show_in_nav"), FieldPanel("nav_label_en"), FieldPanel("nav_label_bn"),
+    ]
 
     class Meta:
         ordering = ["sort_order", "name_en"]
@@ -146,23 +155,6 @@ class ArticlePage(Page):
     def read_minutes(self):
         words = len(re.sub(r"<[^>]+>", " ", self.body_en or "").split())
         return max(3, round(words / 200)) if words else 3
-
-@register_snippet
-class MenuItem(models.Model):
-    label_en = models.CharField(max_length=60)
-    label_bn = models.CharField(max_length=60, blank=True)
-    url = models.CharField(max_length=200, help_text="Path such as / or /category/uk")
-    sort_order = models.PositiveIntegerField(default=0)
-    is_active = models.BooleanField(default=True)
-
-    panels = [FieldPanel("label_en"), FieldPanel("label_bn"), FieldPanel("url"), FieldPanel("sort_order"), FieldPanel("is_active")]
-
-    class Meta:
-        ordering = ["sort_order"]
-        verbose_name = "navigation item"
-
-    def __str__(self):
-        return self.label_en
 
 @register_snippet
 class TickerItem(models.Model):
@@ -300,6 +292,7 @@ class SiteSettings(BaseGenericSetting):
     tagline_en = models.CharField(max_length=200, blank=True)
     tagline_bn = models.CharField(max_length=200, blank=True)
 
+    nav_show_home = models.BooleanField(default=True, help_text="Show a 'Home' link first in the header menu")
     auto_status_strip = models.BooleanField(default=False, help_text="Auto-update weather + exchange rate from the internet (run 'refresh_live_status' on a schedule). When off, the values below are used as typed.")
     weather_london = models.CharField(max_length=60, default="☁ London 18°C", blank=True)
     weather_dhaka = models.CharField(max_length=60, default="☀ Dhaka 31°C", blank=True)
@@ -340,7 +333,7 @@ class SiteSettings(BaseGenericSetting):
     panels = [
         MultiFieldPanel([
             FieldPanel("brand_name"), FieldPanel("brand_kicker"), FieldPanel("brand_name_bn"),
-            FieldPanel("tagline_en"), FieldPanel("tagline_bn"),
+            FieldPanel("tagline_en"), FieldPanel("tagline_bn"), FieldPanel("nav_show_home"),
         ], heading="Masthead"),
         MultiFieldPanel([
             FieldPanel("auto_status_strip"),
