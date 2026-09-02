@@ -1,0 +1,9 @@
+{% load static %}
+{% spaceless %}
+    <img
+        src="{% static 'news/admin-logo.png' %}"
+        alt="UK Bangla Guardian"
+        class="{{ classname }}"
+        style="max-width: 100%; height: auto; {% if wordmark %}max-height: 2.25rem;{% else %}max-height: 1.75rem;{% endif %}"
+    />
+{% endspaceless %}
