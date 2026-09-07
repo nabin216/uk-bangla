@@ -26,7 +26,7 @@ const ACROSS_SECTIONS = ["uk", "bangladesh"];
 
 export default function Home() {
   const router = useRouter();
-  const { language } = useLanguage();
+  const { language, setLanguage } = useLanguage();
   const openStory = (story: Story) => router.push(`/article/${story.id}`);
   const [stories, setStories] = useState<Story[]>(API_URL ? [] : storiesData);
   const [mostRead, setMostRead] = useState<Story[]>(
@@ -75,6 +75,12 @@ export default function Home() {
     <>
       <TickerBanner />
       <main className="mx-auto max-w-[1080px] px-4 py-5 sm:px-6 sm:py-8">
+        <button
+          onClick={() => setLanguage(language === "bn" ? "en" : "bn")}
+          className="mb-4 flex w-full items-center justify-center gap-2 rounded-md border border-blue-200 bg-[#e9f1fb] px-4 py-2.5 text-sm font-bold text-blue-800 transition hover:bg-[#dbeafe] dark:border-slate-700 dark:bg-slate-800 dark:text-amber-300 dark:hover:bg-slate-700"
+        >
+          {language === "bn" ? "Read the English Edition" : "বাংলা সংস্করণ পড়ুন"} <span aria-hidden>→</span>
+        </button>
         <h2 className="mb-3 font-serif text-lg font-bold">{heading("lead")}</h2>
         {loading && <p className="mb-3 text-sm text-slate-500">Loading latest stories…</p>}
         {apiError && <p className="mb-3 text-sm text-amber-700">Showing bundled stories while the news service is unavailable.</p>}
