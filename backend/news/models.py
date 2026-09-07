@@ -1,6 +1,7 @@
 import re
 
 from django.db import models
+from django.utils.text import slugify
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from wagtail.admin.panels import FieldPanel, InlinePanel, MultiFieldPanel
@@ -14,7 +15,7 @@ from wagtail.snippets.models import register_snippet
 class Section(models.Model):
     name_en = models.CharField(max_length=100)
     name_bn = models.CharField(max_length=100, blank=True)
-    slug = models.SlugField(unique=True)
+    slug = models.SlugField(unique=True, blank=True, help_text="Used in the URL (/category/…). Leave blank to generate it from the English name — English letters only.")
     description = models.TextField(blank=True)
     sort_order = models.PositiveIntegerField(default=0, help_text="Order in the header menu and footer")
     show_in_nav = models.BooleanField(default=False, help_text="Show this section as a link in the header menu")
@@ -30,6 +31,16 @@ class Section(models.Model):
     class Meta:
         ordering = ["sort_order", "name_en"]
         verbose_name = "section/category"
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base = slugify(self.name_en) or "section"
+            slug, n = base, 2
+            while Section.objects.exclude(pk=self.pk).filter(slug=slug).exists():
+                slug = f"{base}-{n}"
+                n += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name_en

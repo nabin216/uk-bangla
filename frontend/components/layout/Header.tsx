@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useLanguage } from "@/context/LanguageContext";
 import { useSavedArticles } from "@/context/SavedArticlesContext";
 import { API_URL, fetchSite } from "@/lib/api";
+import { bengaliDate } from "@/lib/bengaliDate";
 import type { NavLink, SiteChrome } from "@/types";
 
 type Props = { onSaved: () => void; dark: boolean; onTheme: () => void };
@@ -21,14 +22,17 @@ const FALLBACK_MENU: NavLink[] = [
 export default function Header({ onSaved, dark, onTheme }: Props) {
   const { language, setLanguage, t } = useLanguage();
   const { savedArticleIds } = useSavedArticles();
-  const [today, setToday] = useState("");
+  const [dates, setDates] = useState({ en: "", bn: "" });
   const [site, setSite] = useState<SiteChrome | null>(null);
 
   useEffect(() => {
-    const id = window.setTimeout(
-      () => setToday(new Date().toLocaleDateString(language === "bn" ? "bn-BD" : "en-GB", { dateStyle: "full" })),
-      0,
-    );
+    const id = window.setTimeout(() => {
+      const now = new Date();
+      setDates({
+        en: now.toLocaleDateString(language === "bn" ? "bn-BD" : "en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" }),
+        bn: `${bengaliDate(now)} বঙ্গাব্দ`,
+      });
+    }, 0);
     return () => window.clearTimeout(id);
   }, [language]);
 
@@ -62,7 +66,10 @@ export default function Header({ onSaved, dark, onTheme }: Props) {
     <header className="block border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
       <div className="bg-slate-100 px-4 py-2 text-xs dark:bg-slate-900">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3">
-          <span suppressHydrationWarning className="font-bold text-blue-800 dark:text-amber-400">{today}</span>
+          <span suppressHydrationWarning className="font-bold text-blue-800 dark:text-amber-400">
+            {dates.en}
+            {dates.bn && <span className="font-medium text-slate-500 dark:text-slate-400"> · {dates.bn}</span>}
+          </span>
           <span>{weather} · <b className="text-emerald-700">1 GBP = ৳{rate}</b></span>
           <div className="flex items-center gap-2">
             <button onClick={() => setLanguage("en")} className={language === "en" ? "rounded-full bg-blue-800 px-2 text-white" : ""}>EN</button>
