@@ -45,8 +45,6 @@ export default function Header({ onSaved, dark, onTheme }: Props) {
 
   const menu = site?.menu?.length ? site.menu : FALLBACK_MENU;
   const settings = site?.settings;
-  const rate = settings ? settings.gbp_to_bdt_rate.toFixed(2) : "152.50";
-  const weather = settings ? `${settings.weather_london} · ${settings.weather_dhaka}` : "☁ London 18°C · ☀ Dhaka 31°C";
 
   const banner = settings?.header_banner;
   const bannerSrc =
@@ -70,7 +68,6 @@ export default function Header({ onSaved, dark, onTheme }: Props) {
             {dates.en}
             {dates.bn && <span className="font-medium text-slate-500 dark:text-slate-400"> · {dates.bn}</span>}
           </span>
-          <span>{weather} · <b className="text-emerald-700">1 GBP = ৳{rate}</b></span>
           <div className="flex items-center gap-2">
             <button onClick={() => setLanguage("en")} className={language === "en" ? "rounded-full bg-blue-800 px-2 text-white" : ""}>EN</button>
             <button onClick={() => setLanguage("bn")} className={language === "bn" ? "rounded-full bg-blue-800 px-2 text-white" : ""}>বাংলা</button>
