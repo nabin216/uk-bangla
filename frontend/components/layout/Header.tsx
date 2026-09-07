@@ -29,8 +29,8 @@ export default function Header({ onSaved, dark, onTheme }: Props) {
     const id = window.setTimeout(() => {
       const now = new Date();
       setDates({
-        en: now.toLocaleDateString(language === "bn" ? "bn-BD" : "en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" }),
-        bn: `${bengaliDate(now)} বঙ্গাব্দ`,
+        en: now.toLocaleDateString(language === "bn" ? "bn-BD" : "en-GB", { day: "numeric", month: "long", year: "numeric" }),
+        bn: bengaliDate(now),
       });
     }, 0);
     return () => window.clearTimeout(id);
