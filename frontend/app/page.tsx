@@ -26,7 +26,7 @@ const ACROSS_SECTIONS = ["uk", "bangladesh"];
 
 export default function Home() {
   const router = useRouter();
-  const { language, setLanguage } = useLanguage();
+  const { language } = useLanguage();
   const openStory = (story: Story) => router.push(`/article/${story.id}`);
   const [stories, setStories] = useState<Story[]>(API_URL ? [] : storiesData);
   const [mostRead, setMostRead] = useState<Story[]>(
@@ -55,7 +55,7 @@ export default function Home() {
   const heading = (key: keyof HomeHeadings) =>
     site?.settings.home_headings?.[key]?.[language] || FALLBACK_HEADINGS[key];
 
-  const { hero, sponsor, across, more } = useMemo(() => {
+  const { hero, sponsor, across, more, english } = useMemo(() => {
     const hero = stories[0];
     const sponsor = stories.find((s) => s.sponsored) || stories.find((s) => s.id.includes("sponsor"));
     const used = new Set<string>([hero?.id, sponsor?.id].filter(Boolean) as string[]);
@@ -68,19 +68,17 @@ export default function Home() {
     across.forEach((s) => used.add(s.id));
 
     const more = stories.filter((s) => !used.has(s.id)).slice(0, 6);
-    return { hero, sponsor, across, more };
+    more.forEach((s) => used.add(s.id));
+
+    const englishPool = stories.filter((s) => !used.has(s.id));
+    const english = (englishPool.length >= 3 ? englishPool : stories).slice(0, 3);
+    return { hero, sponsor, across, more, english };
   }, [stories]);
 
   return (
     <>
       <TickerBanner />
       <main className="mx-auto max-w-[1080px] px-4 py-5 sm:px-6 sm:py-8">
-        <button
-          onClick={() => setLanguage(language === "bn" ? "en" : "bn")}
-          className="mb-4 flex w-full items-center justify-center gap-2 rounded-md border border-blue-200 bg-[#e9f1fb] px-4 py-2.5 text-sm font-bold text-blue-800 transition hover:bg-[#dbeafe] dark:border-slate-700 dark:bg-slate-800 dark:text-amber-300 dark:hover:bg-slate-700"
-        >
-          {language === "bn" ? "Read the English Edition" : "বাংলা সংস্করণ পড়ুন"} <span aria-hidden>→</span>
-        </button>
         <h2 className="mb-3 font-serif text-lg font-bold">{heading("lead")}</h2>
         {loading && <p className="mb-3 text-sm text-slate-500">Loading latest stories…</p>}
         {apiError && <p className="mb-3 text-sm text-amber-700">Showing bundled stories while the news service is unavailable.</p>}
@@ -93,6 +91,17 @@ export default function Home() {
           <h2 className="font-serif text-lg font-bold">{heading("more")}</h2>
         </div>
         <NewsGrid stories={more} onOpen={openStory} />
+
+        {english.length > 0 && (
+          <div className="mt-10">
+            <div className="mb-3 flex items-end justify-between border-b-2 border-[#0f2f57] pb-1 dark:border-amber-400">
+              <h2 className="font-serif text-lg font-bold">In English</h2>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-blue-900 dark:text-amber-400">English coverage</span>
+            </div>
+            <NewsGrid stories={english} onOpen={openStory} lang="en" />
+          </div>
+        )}
+
         <div className="my-6 grid gap-3 lg:grid-cols-7">
           <div className="lg:col-span-3"><ReaderPoll /></div>
           <div className="lg:col-span-4"><MostRead stories={mostRead} heading={heading("opinion")} onOpen={openStory} /></div>
