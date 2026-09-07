@@ -247,11 +247,11 @@ def info_page(request, slug):
     })
 
 def story_detail(request, slug):
+    # Read counts are incremented once per visit via /api/track/, not on every fetch,
+    # so metadata/prefetch requests don't inflate the numbers.
     article = published().filter(slug=slug).first()
     if not article:
         return JsonResponse({"detail": "Story not found."}, status=404)
-    if request.method == "GET":
-        ArticlePage.objects.filter(pk=article.pk).update(read_count=F("read_count") + 1)
     return JsonResponse(article_json(article))
 
 def categories(request):
@@ -291,6 +291,8 @@ def track(request):
     already = PageView.objects.filter(visitor=visitor, path=path, created_at__gte=cutoff).exists()
     if not already:
         PageView.objects.create(path=path, article=article, visitor=visitor)
+        if article:
+            ArticlePage.objects.filter(pk=article.pk).update(read_count=F("read_count") + 1)
     return JsonResponse({"ok": True}, status=201)
 
 @csrf_exempt
