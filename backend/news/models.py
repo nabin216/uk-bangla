@@ -1,9 +1,12 @@
 import re
 
+from django import forms
 from django.db import models
+from django.core.exceptions import ValidationError
 from django.utils.text import slugify
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
+from wagtail.admin.forms import WagtailAdminPageForm
 from wagtail.admin.panels import FieldPanel, InlinePanel, MultiFieldPanel
 from wagtail.contrib.settings.models import BaseGenericSetting, register_setting
 from wagtail.fields import RichTextField
@@ -11,11 +14,14 @@ from wagtail.images import get_image_model_string
 from wagtail.models import Orderable, Page
 from wagtail.snippets.models import register_snippet
 
+from .slugs import BanglaSlugField, BanglaSlugFormField, bangla_slugify, validate_bangla_slug
+
+
 @register_snippet
 class Section(models.Model):
     name_en = models.CharField(max_length=100)
     name_bn = models.CharField(max_length=100, blank=True)
-    slug = models.SlugField(unique=True, blank=True, help_text="Used in the URL (/category/…). Leave blank to generate it from the English name — English letters only.")
+    slug = BanglaSlugField(unique=True, blank=True, help_text="Used in the URL (/category/…). Leave blank to generate it from the English name.")
     description = models.TextField(blank=True)
     sort_order = models.PositiveIntegerField(default=0, help_text="Order in the header menu and footer")
     show_in_nav = models.BooleanField(default=False, help_text="Show this section as a link in the header menu")
@@ -34,7 +40,7 @@ class Section(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            base = slugify(self.name_en) or "section"
+            base = slugify(self.name_en) or bangla_slugify(self.name_bn) or "section"
             slug, n = base, 2
             while Section.objects.exclude(pk=self.pk).filter(slug=slug).exists():
                 slug = f"{base}-{n}"
@@ -125,14 +131,80 @@ class PageView(models.Model):
     def __str__(self):
         return f"{self.path} @ {self.created_at:%Y-%m-%d %H:%M}"
 
+def _has_text(html):
+    """True if a rich-text value has any content once tags are stripped."""
+    return bool(re.sub(r"<[^>]+>", "", html or "").strip())
+
+
+class ArticlePageForm(WagtailAdminPageForm):
+    """Bilingual article form.
+
+    * The slug field accepts Bangla and may be left blank (built server-side
+      from the headline). ``Page.slug`` lives on Wagtail's core model, so it
+      can't be swapped for a ``BanglaSlugField`` without migrating every page
+      type -- redeclaring the *form* field here is the least invasive fix.
+    * A writer may fill in only one language. We require at least one headline
+      and at least one body; an empty English headline falls back to the Bangla
+      one so ``Page.title`` is never blank, and empty rich text is stored as ""
+      so the front-end (``lib/api.ts``) falls back to the other language.
+    """
+
+    title = forms.CharField(
+        max_length=255,
+        required=False,
+        label="Headline (English)",
+        help_text="Leave blank on a Bangla-only story.",
+    )
+    slug = BanglaSlugFormField(
+        max_length=255,
+        required=False,
+        label="Slug",
+        help_text="URL identifier. Leave blank to build it from the headline (trimmed to 50 characters).",
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        title = (cleaned_data.get("title") or "").strip()
+        title_bn = (cleaned_data.get("title_bn") or "").strip()
+        if not title and not title_bn:
+            self.add_error("title", "Add a headline in English or Bangla.")
+        elif not title:
+            # Page.title feeds the admin listing, search and breadcrumbs, so it
+            # must not be empty; fall back to the Bangla headline.
+            cleaned_data["title"] = title = title_bn[:255]
+
+        # Collapse "empty" rich text (an empty <p>) to "" so the front-end can
+        # fall back to the other language instead of rendering a blank block.
+        for field in ("body_en", "body_bn"):
+            if field in cleaned_data and not _has_text(cleaned_data[field]):
+                cleaned_data[field] = ""
+        if not cleaned_data.get("body_en") and not cleaned_data.get("body_bn"):
+            self.add_error("body_en", "Add the article body in English or Bangla.")
+
+        if not cleaned_data.get("slug"):
+            base = bangla_slugify(title_bn or title)
+            if base:
+                slug, suffix = base, 2
+                while not Page._slug_is_available(slug, self.parent_page, self.instance):
+                    tail = f"-{suffix}"
+                    slug = f"{base[:50 - len(tail)].rstrip('-')}{tail}"
+                    suffix += 1
+                cleaned_data["slug"] = slug
+
+        return cleaned_data
+
+
 class ArticlePage(Page):
+    base_form_class = ArticlePageForm
+
     section = models.ForeignKey(Section, on_delete=models.PROTECT, related_name="articles")
     author = models.ForeignKey(Author, on_delete=models.PROTECT, related_name="articles")
-    title_bn = models.CharField(max_length=300)
+    title_bn = models.CharField(max_length=300, blank=True)
     excerpt_en = models.TextField(blank=True)
     excerpt_bn = models.TextField(blank=True)
-    body_en = RichTextField()
-    body_bn = RichTextField()
+    body_en = RichTextField(blank=True)
+    body_bn = RichTextField(blank=True)
     pull_quote_en = models.TextField(blank=True)
     pull_quote_bn = models.TextField(blank=True)
     image = models.ForeignKey(get_image_model_string(), null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
@@ -147,14 +219,73 @@ class ArticlePage(Page):
 
     parent_page_types = ["wagtailcore.Page"]
     subpage_types = []
-    content_panels = Page.content_panels + [
-        MultiFieldPanel([FieldPanel("title"), FieldPanel("title_bn"), FieldPanel("section"), FieldPanel("author")], heading="Story"),
-        MultiFieldPanel([FieldPanel("excerpt_en"), FieldPanel("excerpt_bn"), FieldPanel("body_en"), FieldPanel("body_bn"), FieldPanel("pull_quote_en"), FieldPanel("pull_quote_bn")], heading="Bilingual content"),
-        MultiFieldPanel([FieldPanel("image"), FieldPanel("image_url"), FieldPanel("image_caption_en"), FieldPanel("image_caption_bn"), FieldPanel("image_credit"), FieldPanel("source_url"), FieldPanel("is_featured"), FieldPanel("is_sponsored"), FieldPanel("read_count")], heading="Publishing"),
+    # Ordered for a reporter filing from a phone: the essentials first, the
+    # optional extras in panels that start collapsed.
+    content_panels = [
+        MultiFieldPanel([
+            FieldPanel("title", heading="Headline (English)"),
+            FieldPanel("title_bn", heading="Headline (Bangla)"),
+            FieldPanel("section"),
+            FieldPanel("author"),
+        ], heading="Story"),
+        MultiFieldPanel([
+            FieldPanel("body_en"),
+            FieldPanel("body_bn"),
+        ], heading="Article body"),
+        MultiFieldPanel([
+            FieldPanel("image"),
+            FieldPanel("image_url"),
+            FieldPanel("image_caption_en"),
+            FieldPanel("image_caption_bn"),
+            FieldPanel("image_credit"),
+        ], heading="Photo"),
+        MultiFieldPanel([
+            FieldPanel("excerpt_en"),
+            FieldPanel("excerpt_bn"),
+            FieldPanel("pull_quote_en"),
+            FieldPanel("pull_quote_bn"),
+        ], heading="Summary & pull quote", classname="collapsed"),
+        MultiFieldPanel([
+            FieldPanel("source_url"),
+            FieldPanel("is_featured"),
+            FieldPanel("is_sponsored"),
+            FieldPanel("read_count"),
+        ], heading="Publishing options", classname="collapsed"),
     ]
 
     class Meta:
         ordering = ["-first_published_at"]
+
+    def _autogenerated_slug(self):
+        return bangla_slugify(self.title_bn or self.title)
+
+    def full_clean(self, *args, **kwargs):
+        # Wagtail's Page.full_clean would fill a blank slug with
+        # slugify(title, allow_unicode=True), which strips Bangla combining
+        # marks. Get in first with a Bangla-aware slug.
+        if not self.slug:
+            base = self._autogenerated_slug()
+            if base:
+                self.slug = self._get_autogenerated_slug(base)
+        super().full_clean(*args, **kwargs)
+
+    def clean_fields(self, exclude=None):
+        # Page.slug carries Django's validate_unicode_slug (\\w-based), which
+        # rejects Bangla vowel signs and the virama. Skip it and apply the
+        # Bangla-aware validator instead.
+        exclude = set(exclude or ())
+        exclude.add("slug")
+        super().clean_fields(exclude=exclude)
+        if self.slug:
+            try:
+                validate_bangla_slug(self.slug)
+            except ValidationError as exc:
+                raise ValidationError({"slug": exc.messages})
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = self._autogenerated_slug() or "article"
+        super().save(*args, **kwargs)
 
     @property
     def api_image_url(self):
@@ -164,7 +295,7 @@ class ArticlePage(Page):
 
     @property
     def read_minutes(self):
-        words = len(re.sub(r"<[^>]+>", " ", self.body_en or "").split())
+        words = len(re.sub(r"<[^>]+>", " ", self.body_en or self.body_bn or "").split())
         return max(3, round(words / 200)) if words else 3
 
 @register_snippet
@@ -280,7 +411,7 @@ class MastheadMember(models.Model):
 
 @register_snippet
 class InfoPage(models.Model):
-    slug = models.SlugField(unique=True, help_text="about, contact, privacy, …")
+    slug = BanglaSlugField(unique=True, help_text="about, contact, privacy, …")
     title_en = models.CharField(max_length=150)
     title_bn = models.CharField(max_length=150, blank=True)
     body_en = RichTextField()

@@ -9,7 +9,7 @@ urlpatterns = [
     path("stories/<str:slug>/", views.story_detail),
     path("categories/", views.categories),
     path("most-read/", views.most_read),
-    path("pages/<slug:slug>/", views.info_page),
+    path("pages/<str:slug>/", views.info_page),
     path("newsletter/subscribe/", views.subscribe),
     path("poll/", views.poll),
     path("track/", views.track),
