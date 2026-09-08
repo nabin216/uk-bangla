@@ -37,7 +37,7 @@ function Frame({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!savedOpen || stories.length || !API_URL) return;
-    fetchStories("?limit=100").then(setStories).catch(() => undefined);
+    fetchStories("?limit=50").then(setStories).catch(() => undefined);
   }, [savedOpen, stories.length]);
 
   useEffect(() => {
@@ -54,7 +54,7 @@ function Frame({ children }: { children: ReactNode }) {
   return (
     <div className={language === "bn" ? "font-bengali" : undefined}>
       <div className="flex min-h-screen flex-col bg-[#f3f3f0] font-sans text-slate-900 dark:bg-slate-950 dark:text-slate-100">
-        <Header onSaved={() => setSavedOpen(true)} dark={dark} onTheme={toggleTheme} />
+        <Header dark={dark} onTheme={toggleTheme} />
         <div className="flex-1">{children}</div>
         <Footer />
         <SavedArticlesModal

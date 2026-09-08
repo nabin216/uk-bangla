@@ -3,7 +3,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import type { Story } from "@/types";
 import { useLanguage } from "@/context/LanguageContext";
-import { useSavedArticles } from "@/context/SavedArticlesContext";
 import CommentSection from "@/components/news/CommentSection";
 
 const BLOCK_RE = /<(p|h[1-6]|ul|ol|blockquote|figure|div|section)\b/i;
@@ -38,16 +37,51 @@ function hostname(url?: string) {
   }
 }
 
+function loadCardImage(source: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+    image.crossOrigin = "anonymous";
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("Image could not be loaded"));
+    image.src = source;
+  });
+}
+
+function drawCardText(context: CanvasRenderingContext2D, text: string, x: number, y: number, maxWidth: number, lineHeight: number) {
+  const words = text.split(/\s+/);
+  let line = "";
+  let currentY = y;
+  for (const word of words) {
+    const candidate = line ? `${line} ${word}` : word;
+    if (context.measureText(candidate).width > maxWidth && line) {
+      context.fillText(line, x, currentY);
+      line = word;
+      currentY += lineHeight;
+    } else {
+      line = candidate;
+    }
+  }
+  if (line) context.fillText(line, x, currentY);
+}
+
+function SocialIcon({ label }: { label: string }) {
+  if (label === "Facebook") {
+    return <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4 fill-current"><path d="M14 8h3V4h-3c-3.3 0-5 1.9-5 5v3H6v4h3v8h4v-8h3.5l.5-4H13V9c0-.7.3-1 1-1Z" /></svg>;
+  }
+  if (label === "X") {
+    return <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4 fill-current"><path d="M18.2 3H22l-8.3 9.5L23.5 21h-7.4l-5.8-6.6L4.6 21H.8l8.9-10.2L.5 3H8l5.3 6.1L18.2 3Zm-1.3 15.3h2.1L6.9 5.6H4.7l12.2 12.7Z" /></svg>;
+  }
+  return <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-[1.8]"><circle cx="12" cy="12" r="9" /><path strokeLinecap="round" strokeLinejoin="round" d="M8.7 8.5c.3-.4.7-.5 1.1-.2l1.1 1c.3.3.3.7.1 1l-.5.7c.7 1.3 1.7 2.3 3 3l.7-.5c.3-.2.7-.2 1 .1l1 1.1c.3.4.2.8-.2 1.1-.6.5-1.4.7-2.1.4-3.2-1.2-5.6-3.6-6.8-6.8-.3-.7-.1-1.5.4-2.1Z" /></svg>;
+}
+
 export default function ArticleReader({ story, related }: { story: Story; related: Story[] }) {
   const { language, t } = useLanguage();
-  const { savedArticleIds, toggleSavedArticle } = useSavedArticles();
   const [progress, setProgress] = useState(0);
   const [speaking, setSpeaking] = useState(false);
   const [copied, setCopied] = useState(false);
   const [url, setUrl] = useState("");
   const bodyRef = useRef<HTMLDivElement>(null);
 
-  const saved = savedArticleIds.includes(story.id);
   const bodyHtml = useMemo(() => buildBodyHtml(story.body[language] || story.excerpt?.[language] || ""), [story, language]);
   const minutes = useMemo(() => {
     if (story.readMinutes) return story.readMinutes;
@@ -116,12 +150,81 @@ export default function ArticleReader({ story, related }: { story: Story; relate
     }
   };
 
+  const printArticle = () => window.print();
+
+  const saveCard = async () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 1080;
+    canvas.height = 1080;
+    const context = canvas.getContext("2d");
+    if (!context) return;
+
+    context.fillStyle = "#f4f2ec";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = "#102f57";
+    context.fillRect(0, 0, canvas.width, 650);
+
+    try {
+      const articleImage = await loadCardImage(story.image);
+      const imageRatio = Math.max(1080 / articleImage.naturalWidth, 650 / articleImage.naturalHeight);
+      const imageWidth = articleImage.naturalWidth * imageRatio;
+      const imageHeight = articleImage.naturalHeight * imageRatio;
+      context.drawImage(articleImage, (1080 - imageWidth) / 2, (650 - imageHeight) / 2, imageWidth, imageHeight);
+      const imageGradient = context.createLinearGradient(0, 0, 0, 650);
+      imageGradient.addColorStop(0, "rgba(16, 47, 87, 0.58)");
+      imageGradient.addColorStop(0.45, "rgba(16, 47, 87, 0.08)");
+      imageGradient.addColorStop(1, "rgba(16, 47, 87, 0.82)");
+      context.fillStyle = imageGradient;
+      context.fillRect(0, 0, 1080, 650);
+    } catch {
+      // Keep the branded card usable when a remote image blocks canvas access.
+    }
+
+    try {
+      const logo = await loadCardImage("/logo.png");
+      context.shadowColor = "rgba(0, 0, 0, 0.25)";
+      context.shadowBlur = 18;
+      context.drawImage(logo, 55, 45, 235, 105);
+      context.shadowBlur = 0;
+    } catch {
+      context.fillStyle = "#f5c451";
+      context.font = "700 28px sans-serif";
+      context.fillText("UK Bangla Guardian", 55, 90);
+    }
+
+    context.fillStyle = "#f5c451";
+    context.fillRect(55, 550, 110, 6);
+    context.font = "700 24px sans-serif";
+    context.fillText(categoryLabel.toUpperCase(), 55, 610);
+    context.fillStyle = "#102f57";
+    context.font = "700 20px sans-serif";
+    context.fillText("UK BANGLA GUARDIAN  •  NEWS CARD", 55, 710);
+    context.fillStyle = "#102f57";
+    context.font = "700 46px sans-serif";
+    drawCardText(context, story.title[language], 55, 775, 970, 60);
+    context.fillStyle = "#102f57";
+    context.fillRect(0, 1000, 1080, 80);
+    context.fillStyle = "#f5c451";
+    context.font = "600 22px sans-serif";
+    context.fillText(`${story.date || ""}  |  ukbanglaguardian.com`, 55, 1048);
+
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = `uk-bangla-${story.id}-social-card.png`;
+      link.click();
+      URL.revokeObjectURL(downloadUrl);
+    }, "image/png");
+  };
+
   const encoded = encodeURIComponent(url);
   const encodedTitle = encodeURIComponent(story.title[language]);
   const shareLinks = [
-    { label: "Facebook", glyph: "f", href: `https://www.facebook.com/sharer/sharer.php?u=${encoded}` },
-    { label: "X", glyph: "𝕏", href: `https://twitter.com/intent/tweet?url=${encoded}&text=${encodedTitle}` },
-    { label: "WhatsApp", glyph: "⌾", href: `https://wa.me/?text=${encodedTitle}%20${encoded}` },
+    { label: "Facebook", href: `https://www.facebook.com/sharer/sharer.php?u=${encoded}` },
+    { label: "X", href: `https://twitter.com/intent/tweet?url=${encoded}&text=${encodedTitle}` },
+    { label: "WhatsApp", href: `https://wa.me/?text=${encodedTitle}%20${encoded}` },
   ];
 
   const shareButtons = (
@@ -140,9 +243,15 @@ export default function ArticleReader({ story, related }: { story: Story; relate
           target="_blank"
           rel="noreferrer"
           aria-label={`${t("share")} — ${link.label}`}
-          className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 text-xs transition hover:border-[#0f2f57] hover:text-[#0f2f57] dark:border-slate-700 dark:hover:border-amber-400 dark:hover:text-amber-400"
+          className={`flex h-9 w-9 items-center justify-center rounded-full border text-xs transition dark:border-slate-700 ${
+            link.label === "Facebook"
+              ? "border-[#1877f2]/40 text-[#1877f2] hover:border-[#1877f2]"
+              : link.label === "X"
+                ? "border-slate-400 text-slate-950 hover:border-slate-950 dark:text-white dark:hover:border-white"
+                : "border-[#25d366]/50 text-[#16a34a] hover:border-[#25d366] dark:text-[#25d366]"
+          }`}
         >
-          {link.glyph}
+          <SocialIcon label={link.label} />
         </a>
       ))}
     </>
@@ -155,7 +264,11 @@ export default function ArticleReader({ story, related }: { story: Story; relate
       </div>
 
       <div className="mx-auto max-w-[1140px] px-4 pt-8 sm:px-6">
-        <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
+        <div className="print-only mb-6 border-b border-slate-300 pb-4">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="UK Bangla Guardian" className="h-16 w-auto" />
+        </div>
+        <div className="no-print flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
           <Link href="/" className="transition hover:text-[#0f2f57] dark:hover:text-amber-400">
             ← {t("backToHome")}
           </Link>
@@ -166,22 +279,10 @@ export default function ArticleReader({ story, related }: { story: Story; relate
         </div>
 
         <div className="mx-auto mt-8 flex max-w-[720px] gap-8 lg:max-w-[788px]">
-          <aside className="hidden w-10 shrink-0 lg:block">
+          <aside className="no-print hidden w-10 shrink-0 lg:block">
             <div className="sticky top-24 flex flex-col items-center gap-3">
               <span className="mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">{t("share")}</span>
               {shareButtons}
-              <button
-                onClick={() => toggleSavedArticle(story.id)}
-                aria-pressed={saved}
-                aria-label={t("save")}
-                className={`flex h-9 w-9 items-center justify-center rounded-full border text-xs transition ${
-                  saved
-                    ? "border-amber-500 bg-amber-500 text-white"
-                    : "border-slate-300 hover:border-[#0f2f57] hover:text-[#0f2f57] dark:border-slate-700 dark:hover:border-amber-400 dark:hover:text-amber-400"
-                }`}
-              >
-                {saved ? "🔖" : "♡"}
-              </button>
             </div>
           </aside>
 
@@ -229,7 +330,7 @@ export default function ArticleReader({ story, related }: { story: Story; relate
               </div>
             </div>
 
-            <div className="mt-3 flex items-center gap-2">
+            <div className="no-print mt-3 flex items-center gap-2">
               <button
                 onClick={speak}
                 className="flex items-center gap-2 rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-[#0f2f57] transition hover:bg-white dark:border-slate-700 dark:text-amber-400 dark:hover:bg-slate-900"
@@ -237,10 +338,18 @@ export default function ArticleReader({ story, related }: { story: Story; relate
                 🔊 {speaking ? t("stop") : t("listen")}
               </button>
               <button
-                onClick={() => toggleSavedArticle(story.id)}
-                className="flex items-center gap-2 rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold transition hover:bg-white dark:border-slate-700 dark:hover:bg-slate-900 lg:hidden"
+                onClick={printArticle}
+                aria-label={t("print")}
+                className="flex items-center gap-2 rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-[#0f2f57] transition hover:bg-white dark:border-slate-700 dark:text-amber-400 dark:hover:bg-slate-900"
               >
-                {saved ? "🔖" : "♡"} {t("save")}
+                🖨 {t("print")}
+              </button>
+              <button
+                onClick={saveCard}
+                aria-label={t("saveCard")}
+                className="flex items-center gap-2 rounded-full border border-amber-500 bg-amber-400 px-3 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-amber-300"
+              >
+                ▣ {t("saveCard")}
               </button>
               <div className="ml-auto flex gap-2 lg:hidden">{shareButtons}</div>
             </div>
@@ -276,7 +385,7 @@ export default function ArticleReader({ story, related }: { story: Story; relate
               </a>
             )}
 
-            <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-slate-300 pt-5 dark:border-slate-800">
+            <div className="no-print mt-10 flex flex-wrap items-center justify-between gap-4 border-t border-slate-300 pt-5 dark:border-slate-800">
               <div className="flex flex-wrap gap-2">
                 {[categoryLabel, sectionLabel].filter(Boolean).map((tag, index) => (
                   <span

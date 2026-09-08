@@ -6,17 +6,19 @@ export default function NewsGrid({
   stories,
   onOpen,
   lang,
+  compact,
 }: {
   stories: Story[];
   onOpen: (story: Story) => void;
   lang?: Language;
+  compact?: boolean;
 }) {
   const { language, t } = useLanguage();
   const { toggleSavedArticle, savedArticleIds } = useSavedArticles();
   const view = lang ?? language;
   const locale = view === "bn" ? "bn-BD" : "en-GB";
   return (
-    <section className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+    <section className={compact ? "grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-5" : "grid grid-cols-1 gap-5 sm:grid-cols-3"}>
       {stories.map((story) => (
         <article key={story.id} className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
           {/* eslint-disable-next-line @next/next/no-img-element */}

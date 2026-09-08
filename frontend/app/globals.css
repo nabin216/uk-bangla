@@ -39,6 +39,7 @@ body { margin: 0; font-family: var(--font-sans); font-size: 16px; line-height: 1
 
 @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 .animate-marquee { animation: marquee 25s linear infinite; }
+.print-only { display: none; }
 
 /* Article reading page */
 .article-body { font-family: var(--font-reading); font-size: 1.2rem; line-height: 1.75; color: #1f2937; }
@@ -60,3 +61,13 @@ body { margin: 0; font-family: var(--font-sans); font-size: 16px; line-height: 1
 .dark .article-dropcap > p:first-of-type::first-letter { color: #f5c451; }
 .font-bengali .article-dropcap > p:first-of-type::first-letter { float: none; font-size: inherit; padding: 0; color: inherit; }
 @media (prefers-reduced-motion: reduce) { .animate-marquee { animation: none; } }
+
+@media print {
+  .print-only { display: block !important; }
+  header, footer, nav, .no-print { display: none !important; }
+  body, .article-body { background: white !important; color: black !important; }
+  main { padding: 0 !important; }
+  article { max-width: 100% !important; }
+  .article-body { font-size: 12pt; line-height: 1.6; }
+  .article-body a { color: black !important; }
+}
