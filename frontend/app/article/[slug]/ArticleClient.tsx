@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import ArticleReader from "@/components/news/ArticleReader";
 import { storiesData } from "@/data/storiesData";
-import { API_URL, fetchStory, fetchStories } from "@/lib/api";
+import { API_URL, decodeSlug, fetchStory, fetchStories } from "@/lib/api";
 import type { Story } from "@/types";
 import { useLanguage } from "@/context/LanguageContext";
 
@@ -14,7 +14,8 @@ function pickRelated(all: Story[], current: Story) {
 }
 
 export default function ArticleClient() {
-  const { slug } = useParams<{ slug: string }>();
+  const params = useParams<{ slug: string }>();
+  const slug = decodeSlug(params.slug);
   const { t } = useLanguage();
   const [story, setStory] = useState<Story | null>(API_URL ? null : storiesData.find((item) => item.id === slug) || null);
   const [pool, setPool] = useState<Story[]>(API_URL ? [] : storiesData);
@@ -24,7 +25,7 @@ export default function ArticleClient() {
   useEffect(() => {
     if (!API_URL) return;
     const timer = window.setTimeout(() => setLoading(true), 0);
-    Promise.all([fetchStory(slug), fetchStories("?limit=50").catch(() => [] as Story[])])
+    Promise.all([fetchStory(slug), fetchStories("?limit=12").catch(() => [] as Story[])])
       .then(([detail, latest]) => {
         setStory(detail);
         setPool(latest.length ? latest : storiesData);

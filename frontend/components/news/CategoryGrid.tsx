@@ -32,7 +32,7 @@ export default function CategoryGrid({
               </span>
               <h3 className="mt-1 font-serif text-lg font-bold leading-tight sm:text-xl">{story.title[language]}</h3>
               <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-                {story.excerpt?.[language] || story.title[language]}
+                {story.synopsis[language] || story.title[language]}
               </p>
             </div>
           </article>

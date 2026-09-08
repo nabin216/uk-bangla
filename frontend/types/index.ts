@@ -22,7 +22,8 @@ export type Story = {
   sponsored?: boolean;
   title: LocalizedText;
   body: LocalizedText;
-  excerpt?: LocalizedText;
+  excerpt?: LocalizedText;   // editor-written standfirst; empty when not supplied
+  synopsis: LocalizedText;   // teaser for cards/SEO: the excerpt, else a body snippet
   pullQuote?: LocalizedText;
   section?: string;
 };

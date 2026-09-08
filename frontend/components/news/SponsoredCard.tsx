@@ -15,7 +15,7 @@ export default function SponsoredCard({ story, onOpen }: { story: Story; onOpen:
       <div className="flex flex-col justify-center">
         <span className="text-sm font-bold uppercase tracking-wide text-amber-700">♛ {t("partnerFeature")}</span>
         <h3 className="mt-3 font-serif text-2xl font-bold leading-tight sm:text-3xl">{story.title[language]}</h3>
-        <p className="mt-3 text-base leading-relaxed text-slate-600 dark:text-slate-300">{story.excerpt?.[language] || story.title[language]}</p>
+        <p className="mt-3 text-base leading-relaxed text-slate-600 dark:text-slate-300">{story.synopsis[language] || story.title[language]}</p>
       </div>
     </article>
   );

@@ -8,7 +8,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   try {
     const story = await fetchStory(slug);
     const title = story.title.en || story.title.bn;
-    const description = story.excerpt?.en || story.excerpt?.bn || undefined;
+    const description = story.synopsis.en || story.synopsis.bn || undefined;
     const images = story.image ? [story.image] : undefined;
     return {
       title,

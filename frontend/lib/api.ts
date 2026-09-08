@@ -33,9 +33,38 @@ const dual = (value?: Dual): LocalizedText => ({
 const stripHtml = (value: string) =>
   value.replace(/<[^>]*>/g, " ").replace(/&[a-z]+;/gi, " ").replace(/\s+/g, " ").trim();
 
+// A short plain-text teaser from body HTML, trimmed at a word boundary.
+const teaser = (html: string, max = 200): string => {
+  const text = stripHtml(html || "");
+  if (text.length <= max) return text;
+  return `${text.slice(0, max).replace(/\s+\S*$/, "").trimEnd()}…`;
+};
+
+// The App Router hands back URL-encoded route params (useParams()/params), so a
+// Bangla slug arrives here as "%E0%A6...". Decode first, then encode exactly
+// once for the request — safe whether the caller passes an encoded or a plain
+// slug (e.g. story.id straight from the API).
+export const decodeSlug = (raw: string): string => {
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return raw;
+  }
+};
+const toApiSlug = (slug: string) => encodeURIComponent(decodeSlug(slug));
+
 export function toStory(article: ApiArticle): Story {
   const image = article.image && article.image.startsWith("/") ? `${API_URL}${article.image}` : article.image;
   const authorName = article.author?.name || article.author?.name_en || "UK Bangla Guardian";
+  const body = {
+    en: article.body?.en || article.body?.bn || article.excerpt?.en || article.excerpt?.bn || "",
+    bn: article.body?.bn || article.body?.en || article.excerpt?.bn || article.excerpt?.en || "",
+  };
+  // The standfirst: only what an editor actually wrote (with EN<->BN fallback).
+  const excerpt = {
+    en: article.excerpt?.en || article.excerpt?.bn || "",
+    bn: article.excerpt?.bn || article.excerpt?.en || "",
+  };
   return {
     id: article.slug || String(article.id),
     category: article.category?.name || "News",
@@ -55,14 +84,12 @@ export function toStory(article: ApiArticle): Story {
     commentCount: article.comment_count ?? undefined,
     featured: article.is_featured,
     sponsored: article.is_sponsored,
-    title: { en: article.title?.en || "", bn: article.title?.bn || article.title?.en || "" },
-    body: {
-      en: article.body?.en || article.excerpt?.en || "",
-      bn: article.body?.bn || article.body?.en || article.excerpt?.bn || "",
-    },
-    excerpt: {
-      en: article.excerpt?.en || stripHtml(article.body?.en || ""),
-      bn: article.excerpt?.bn || stripHtml(article.body?.bn || article.body?.en || ""),
+    title: dual(article.title),
+    body,
+    excerpt,
+    synopsis: {
+      en: excerpt.en || teaser(body.en),
+      bn: excerpt.bn || teaser(body.bn),
     },
     pullQuote: dual(article.pull_quote),
   };
@@ -85,7 +112,7 @@ export async function fetchStories(params = ""): Promise<Story[]> {
 
 export async function fetchStory(slug: string): Promise<Story> {
   if (!API_URL) throw new Error("API is not configured");
-  const response = await fetch(`${API_URL}/api/stories/${encodeURIComponent(slug)}/`);
+  const response = await fetch(`${API_URL}/api/stories/${toApiSlug(slug)}/`);
   if (!response.ok) throw new Error("Story not found");
   return toStory(await response.json());
 }
@@ -100,7 +127,7 @@ export async function fetchMostRead(limit = 10): Promise<Story[]> {
 
 export async function fetchComments(slug: string): Promise<ArticleComment[]> {
   if (!API_URL) throw new Error("API is not configured");
-  const response = await fetch(`${API_URL}/api/stories/${encodeURIComponent(slug)}/comments/`, {
+  const response = await fetch(`${API_URL}/api/stories/${toApiSlug(slug)}/comments/`, {
     headers: { Accept: "application/json" },
   });
   if (!response.ok) throw new Error("Comments request failed");
@@ -110,7 +137,7 @@ export async function fetchComments(slug: string): Promise<ArticleComment[]> {
 
 export async function postComment(slug: string, input: { name: string; body: string }): Promise<ArticleComment> {
   if (!API_URL) throw new Error("API is not configured");
-  const response = await fetch(`${API_URL}/api/stories/${encodeURIComponent(slug)}/comments/`, {
+  const response = await fetch(`${API_URL}/api/stories/${toApiSlug(slug)}/comments/`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify(input),
