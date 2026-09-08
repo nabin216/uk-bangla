@@ -314,6 +314,11 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         root = Page.get_first_root_node()
 
+        # Anchor the demo stories to the recent past relative to now, keeping their
+        # relative spacing, so freshly uploaded real articles always sort newer.
+        newest_story_date = max(item["date"] for item in STORIES)
+        seed_now = datetime.now(timezone.utc)
+
         for name_en, name_bn, sort, in_nav in SECTIONS:
             Section.objects.update_or_create(
                 slug=slugify(name_en),
@@ -348,9 +353,8 @@ class Command(BaseCommand):
             else:
                 article = ArticlePage(slug=item["slug"], **fields)
                 root.add_child(instance=article)
-            article.first_published_at = item["date"]
-            article.last_published_at = item["date"]
-            article.save_revision().publish()
+            article.first_published_at = seed_now - timedelta(days=1) - (newest_story_date - item["date"])
+            article.save_revision().publish()  # sets last_published_at = now
             self.stdout.write(f"Article: {item['title_en']}")
 
         settings_obj = SiteSettings.load()

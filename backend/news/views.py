@@ -52,10 +52,13 @@ def article_json(article):
     }
 
 def published():
+    # Wagtail's PageManager orders by tree path by default, which overrides
+    # ArticlePage.Meta.ordering — so newest-first must be set explicitly here.
     return (
         ArticlePage.objects.live().public()
         .select_related("section", "author", "image")
         .annotate(comment_count=Count("comments", filter=Q(comments__is_approved=True)))
+        .order_by("-first_published_at")
     )
 
 def comment_json(comment):
