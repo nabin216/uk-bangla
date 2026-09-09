@@ -35,6 +35,9 @@ export const metadata: Metadata = {
     icon: "/icon.svg",
     apple: "/apple-icon.png",
   },
+  verification: process.env.GOOGLE_SITE_VERIFICATION
+    ? { google: process.env.GOOGLE_SITE_VERIFICATION }
+    : undefined,
 };
 
 const organizationJsonLd = {

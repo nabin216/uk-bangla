@@ -5,6 +5,9 @@ set -euo pipefail
 
 REPO=/srv/ukbangla
 export NEXT_PUBLIC_API_URL="https://ukbanglaguardian.com"
+# Google Search Console HTML-tag verification (URL-prefix property).
+# Paste the token from the "HTML tag" method, then commit + redeploy.
+export GOOGLE_SITE_VERIFICATION=""
 
 cd "$REPO"
 git fetch --prune origin
