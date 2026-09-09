@@ -14,7 +14,7 @@ const CATEGORY_NAMES_BN: Record<string, string> = {
   business: "বাণিজ্য",
   culture: "সংস্কৃতি",
   opinion: "মতামত",
-  english: "ইংরেজি সংবাদ",
+  "english-news": "ইংরেজি সংবাদ",
 };
 
 export default function CategoryClient() {

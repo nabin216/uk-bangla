@@ -54,7 +54,7 @@ export default function Home() {
     Promise.all([
       fetchStories(`?limit=24${searchParam}`),
       fetchMostRead(6),
-      fetchStories(`?category=english&limit=6`).catch(() => [] as Story[]),
+      fetchStories(`?category=english-news&limit=6`).catch(() => [] as Story[]),
     ])
       .then(([latest, popular, englishNews]) => {
         setStories(latest);
@@ -85,7 +85,7 @@ export default function Home() {
     across.forEach((s) => used.add(s.id));
 
     // English-category stories have their own "In English" block below.
-    const more = stories.filter((s) => !used.has(s.id) && s.section !== "english").slice(0, 6);
+    const more = stories.filter((s) => !used.has(s.id) && s.section !== "english-news").slice(0, 6);
     more.forEach((s) => used.add(s.id));
 
     return { hero, sponsor, across, more };
@@ -93,7 +93,7 @@ export default function Home() {
 
   const english = useMemo(() => {
     if (englishStories.length) return englishStories;
-    const fromFeed = stories.filter((story) => story.section === "english" || story.category.toLowerCase() === "english");
+    const fromFeed = stories.filter((story) => story.section === "english-news" || story.category.toLowerCase().includes("english"));
     if (fromFeed.length) return fromFeed;
     return storiesData.filter((story) => story.category.toLowerCase() === "english");
   }, [englishStories, stories]);
@@ -124,7 +124,7 @@ export default function Home() {
             <div className="mb-3 flex items-end justify-between border-b-2 border-[#0f2f57] pb-1 dark:border-amber-400">
               <h2 className="font-serif text-lg font-bold">In English</h2>
               <button
-                onClick={() => router.push("/category/english")}
+                onClick={() => router.push("/category/english-news")}
                 className="text-[10px] font-bold uppercase tracking-wider text-blue-900 hover:underline dark:text-amber-400"
               >
                 All English news →

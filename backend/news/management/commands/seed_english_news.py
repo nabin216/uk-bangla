@@ -6,7 +6,7 @@ from wagtail.models import Page
 from news.models import ArticlePage, Author, Section
 
 SECTION = {
-    "slug": "english",
+    "slug": "english-news",
     "name_en": "English News",
     "name_bn": "ইংরেজি সংবাদ",
     "description": "English-language reporting for readers across Britain and Bangladesh.",
@@ -82,8 +82,14 @@ class Command(BaseCommand):
         )
 
         for item in STORIES:
-            if ArticlePage.objects.filter(slug=item["slug"]).exists():
-                self.stdout.write(f"Skipped (exists): {item['slug']}")
+            existing = ArticlePage.objects.filter(slug=item["slug"]).first()
+            if existing:
+                if existing.section_id != section.id:
+                    existing.section = section
+                    existing.save(update_fields=["section"])
+                    self.stdout.write(f"Moved to {section.slug}: {item['slug']}")
+                else:
+                    self.stdout.write(f"Skipped (exists): {item['slug']}")
                 continue
             article = ArticlePage(
                 slug=item["slug"],
