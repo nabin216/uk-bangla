@@ -143,7 +143,7 @@ export default function Header({ dark, onTheme }: Props) {
               onClick={() => setMenuOpen(false)}
               className="rounded px-3 py-3 hover:bg-slate-100 hover:text-blue-700 dark:hover:bg-slate-800 dark:hover:text-amber-400"
             >
-              {item.label.en}
+              {item.label[language] || item.label.en}
             </Link>
           ))}
         </div>
