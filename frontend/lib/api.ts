@@ -9,7 +9,8 @@ type ApiArticle = {
   slug: string;
   title: Dual;
   excerpt?: Dual;
-  body: Dual;
+  synopsis?: Dual;   // list endpoints send this instead of the full body
+  body?: Dual;
   pull_quote?: Dual;
   category: { name: string; name_bn?: string; slug: string };
   author: { name?: string; name_en?: string; name_bn?: string; role?: Dual; bio?: Dual };
@@ -88,8 +89,8 @@ export function toStory(article: ApiArticle): Story {
     body,
     excerpt,
     synopsis: {
-      en: excerpt.en || teaser(body.en),
-      bn: excerpt.bn || teaser(body.bn),
+      en: article.synopsis?.en || excerpt.en || teaser(body.en),
+      bn: article.synopsis?.bn || excerpt.bn || teaser(body.bn),
     },
     pullQuote: dual(article.pull_quote),
   };

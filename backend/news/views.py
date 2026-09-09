@@ -8,6 +8,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Count, F, Q
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
+from django.utils.html import strip_tags
+from django.utils.text import Truncator
 from wagtail.rich_text import expand_db_html
 from .models import (
     ArticlePage, Comment, FooterLink, InfoPage, LiveStatus, MastheadMember,
@@ -25,6 +27,40 @@ def requested_limit(request, default=50, maximum=100):
     if limit < 1 or limit > maximum:
         raise ValueError(f"limit must be between 1 and {maximum}.")
     return limit
+
+def _cache(response, seconds):
+    response["Cache-Control"] = f"public, max-age={seconds // 2}, s-maxage={seconds}"
+    return response
+
+
+def _teaser(html, chars=220):
+    text = strip_tags(html or "").strip()
+    return Truncator(text).chars(chars, truncate="…") if text else ""
+
+
+def article_card_json(article):
+    """Trimmed payload for list/grid views — no full body (see article_json)."""
+    excerpt_en, excerpt_bn = article.excerpt_en, article.excerpt_bn
+    return {
+        "id": article.id, "slug": article.slug, "url": article.url,
+        "title": {"en": article.title, "bn": article.title_bn},
+        "excerpt": {"en": excerpt_en, "bn": excerpt_bn},
+        "synopsis": {
+            "en": excerpt_en or _teaser(article.body_en) or _teaser(article.body_bn),
+            "bn": excerpt_bn or _teaser(article.body_bn) or _teaser(article.body_en),
+        },
+        "category": {"name": article.section.name_en, "name_bn": article.section.name_bn, "slug": article.section.slug},
+        "author": {"name": article.author.name_en, "name_bn": article.author.name_bn},
+        "date": article.first_published_at.isoformat() if article.first_published_at else None,
+        "image": article.api_image_url,
+        "image_caption": {"en": article.image_caption_en, "bn": article.image_caption_bn},
+        "image_credit": article.image_credit,
+        "read_minutes": article.read_minutes,
+        "comment_count": getattr(article, "comment_count", None),
+        "is_featured": article.is_featured,
+        "is_sponsored": article.is_sponsored, "read_count": article.read_count,
+    }
+
 
 def article_json(article):
     return {
@@ -105,7 +141,8 @@ def stories(request):
         limit = requested_limit(request)
     except ValueError as error:
         return JsonResponse({"detail": str(error)}, status=400)
-    return JsonResponse({"count": qs.count(), "results": [article_json(a) for a in qs[:limit]]})
+    resp = JsonResponse({"count": qs.count(), "results": [article_card_json(a) for a in qs[:limit]]})
+    return resp if search else _cache(resp, 60)
 
 def homepage(request):
     """Return the compact set of data needed to render the landing page."""
@@ -114,11 +151,11 @@ def homepage(request):
         limit = requested_limit(request, default=20)
     except ValueError as error:
         return JsonResponse({"detail": str(error)}, status=400)
-    return JsonResponse({
-        "stories": [article_json(a) for a in qs[:limit]],
-        "most_read": [article_json(a) for a in qs.order_by("-read_count", "-first_published_at")[:10]],
+    return _cache(JsonResponse({
+        "stories": [article_card_json(a) for a in qs[:limit]],
+        "most_read": [article_card_json(a) for a in qs.order_by("-read_count", "-first_published_at")[:10]],
         "categories": [section_json(s) for s in Section.objects.all()],
-    })
+    }), 60)
 
 def section_json(section):
     return {"id": section.id, "name": section.name_en, "name_bn": section.name_bn, "slug": section.slug}
@@ -149,7 +186,7 @@ def site(request):
     elif settings_obj.header_banner_image_url:
         banner_image = settings_obj.header_banner_image_url
 
-    return JsonResponse({
+    return _cache(JsonResponse({
         "settings": {
             "header_banner": {
                 "enabled": bool(settings_obj.header_banner_enabled and banner_image),
@@ -200,7 +237,7 @@ def site(request):
             {"role": dual(m.role_en, m.role_bn), "name": dual(m.name_en, m.name_bn)}
             for m in MastheadMember.objects.all()
         ],
-    })
+    }), 120)
 
 @csrf_exempt
 def poll(request):
@@ -255,10 +292,10 @@ def story_detail(request, slug):
     article = published().filter(slug=slug).first()
     if not article:
         return JsonResponse({"detail": "Story not found."}, status=404)
-    return JsonResponse(article_json(article))
+    return _cache(JsonResponse(article_json(article)), 120)
 
 def categories(request):
-    return JsonResponse({"results": [section_json(s) for s in Section.objects.all()]})
+    return _cache(JsonResponse({"results": [section_json(s) for s in Section.objects.all()]}), 300)
 
 def most_read(request):
     try:
@@ -266,7 +303,7 @@ def most_read(request):
     except ValueError as error:
         return JsonResponse({"detail": str(error)}, status=400)
     qs = published().order_by("-read_count", "-first_published_at")[:limit]
-    return JsonResponse({"results": [article_json(a) for a in qs]})
+    return _cache(JsonResponse({"results": [article_card_json(a) for a in qs]}), 120)
 
 def visitor_hash(request):
     forwarded = request.META.get("HTTP_X_FORWARDED_FOR", "")
