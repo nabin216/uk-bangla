@@ -1,0 +1,21 @@
+# /etc/systemd/system/ukbangla.service
+[Unit]
+Description=UK Bangla Guardian (gunicorn)
+After=network.target
+
+[Service]
+User=deploy
+Group=www-data
+WorkingDirectory=/srv/ukbangla/backend
+EnvironmentFile=/srv/ukbangla/backend/.env
+ExecStart=/srv/ukbangla/.venv/bin/gunicorn config.wsgi:application \
+    --bind 127.0.0.1:8000 \
+    --workers 3 \
+    --timeout 60 \
+    --access-logfile - \
+    --error-logfile -
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
