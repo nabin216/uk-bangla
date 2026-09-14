@@ -14,11 +14,8 @@ git fetch --prune origin
 git reset --hard origin/main
 
 cd "$REPO/frontend"
-sudo systemctl stop ukbangla-web || true
-trap 'sudo systemctl start ukbangla-web' EXIT
 npm ci --no-audit --no-fund --jobs=1
 npm run build
 
 sudo systemctl restart ukbangla-web
-trap - EXIT
 echo "Frontend deployed: $(git rev-parse --short HEAD)"
