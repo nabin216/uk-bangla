@@ -10,7 +10,7 @@ WorkingDirectory=/srv/ukbangla/backend
 EnvironmentFile=/srv/ukbangla/backend/.env
 ExecStart=/srv/ukbangla/.venv/bin/gunicorn config.wsgi:application \
     --bind 127.0.0.1:8000 \
-    --workers 3 \
+    --workers 1 \
     --timeout 60 \
     --access-logfile - \
     --error-logfile -
