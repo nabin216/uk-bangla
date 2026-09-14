@@ -11,7 +11,7 @@ export default function SponsoredCard({ story, onOpen }: { story: Story; onOpen:
         {t("sponsored")}
       </span>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={story.image} alt={story.title.en} className="h-52 w-full rounded-xl object-cover md:w-5/12" />
+      <img loading="lazy" decoding="async" src={story.image} alt={story.title.en} className="h-52 w-full rounded-xl object-cover md:w-5/12" />
       <div className="flex flex-col justify-center">
         <span className="text-sm font-bold uppercase tracking-wide text-amber-700">♛ {t("partnerFeature")}</span>
         <h3 className="mt-3 font-serif text-2xl font-bold leading-tight sm:text-3xl">{story.title[language]}</h3>

@@ -22,7 +22,7 @@ export default function NewsGrid({
       {stories.map((story) => (
         <article key={story.id} className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img onClick={() => onOpen(story)} src={story.image} alt={story.title.en} className="h-44 w-full cursor-pointer object-cover sm:h-40" />
+          <img loading="lazy" decoding="async" onClick={() => onOpen(story)} src={story.image} alt={story.title.en} className="h-44 w-full cursor-pointer object-cover sm:h-40" />
           <div className="p-5">
             <span className="text-[10px] font-bold uppercase text-blue-900 dark:text-amber-400">
               {view === "bn" ? story.categoryBn || story.category : story.category}

@@ -25,7 +25,7 @@ export default function CategoryGrid({
             className="grid cursor-pointer grid-cols-[128px_1fr] gap-4 sm:block"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={story.image} alt={story.title.en} className="h-28 w-full rounded object-cover sm:mb-3 sm:h-40" />
+            <img loading="lazy" decoding="async" src={story.image} alt={story.title.en} className="h-28 w-full rounded object-cover sm:mb-3 sm:h-40" />
             <div>
               <span className="text-[10px] font-bold uppercase text-blue-900 dark:text-amber-400">
                 {language === "bn" ? story.categoryBn || story.category : story.category}

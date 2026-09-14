@@ -290,7 +290,10 @@ class ArticlePage(Page):
     @property
     def api_image_url(self):
         if self.image:
-            return self.image.file.url
+            try:
+                return self.image.get_rendition("width-1200").url
+            except Exception:
+                return self.image.file.url
         return self.image_url or None
 
     @property
