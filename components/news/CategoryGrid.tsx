@@ -1,7 +1,0 @@
-import type { Story } from "@/types";
-import { useLanguage } from "@/context/LanguageContext";
-export default function CategoryGrid({ stories, onOpen }: { stories: Story[]; onOpen: (story: Story) => void }) {
-  const { language } = useLanguage();
-  const featured = (["story-1", "story-2", "story-4"].map((id) => stories.find((story) => story.id === id)).filter((story): story is Story => Boolean(story)).length ? ["story-1", "story-2", "story-4"].map((id) => stories.find((story) => story.id === id)).filter((story): story is Story => Boolean(story)) : stories.slice(0, 3));
-  return <section className="mb-10"><div className="mb-4 flex items-center justify-between border-b border-slate-300 pb-2"><h2 className="font-serif text-xl font-black">Across Britain &amp; Bangladesh</h2><button className="text-[10px] font-bold uppercase text-blue-900">View all news +</button></div><div className="grid grid-cols-1 gap-7 sm:grid-cols-3 sm:gap-5">{featured.map((story) => <article key={story.id} onClick={() => onOpen(story)} className="grid grid-cols-[128px_1fr] gap-4 cursor-pointer sm:block"><img src={story.image} alt={story.title.en} className="h-28 w-full rounded object-cover sm:mb-3 sm:h-40" /><div><span className="text-[10px] font-bold uppercase text-blue-900">{story.category} · {story.section ?? "FEATURE"}</span><h3 className="mt-1 font-serif text-lg font-bold leading-tight sm:text-xl">{story.title[language]}</h3><p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300">{story.body[language]}</p></div></article>)}</div></section>;
-}
