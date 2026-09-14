@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import ArticleReader from "@/components/news/ArticleReader";
 import { storiesData } from "@/data/storiesData";
-import { API_URL, decodeSlug, fetchStory, fetchStories } from "@/lib/api";
+import { API_URL, decodeSlug, fetchStory, fetchStories, trackStoryView } from "@/lib/api";
 import type { Story } from "@/types";
 import { useLanguage } from "@/context/LanguageContext";
 
@@ -40,6 +40,19 @@ export default function ArticleClient() {
         setLoading(false);
       });
     return () => window.clearTimeout(timer);
+  }, [slug]);
+
+  useEffect(() => {
+    if (!API_URL) return;
+    let active = true;
+    trackStoryView(slug, window.location.pathname).then((readCount) => {
+      if (active && readCount != null) {
+        setStory((current) => (current ? { ...current, readCount } : current));
+      }
+    });
+    return () => {
+      active = false;
+    };
   }, [slug]);
 
   const related = useMemo(() => (story ? pickRelated(pool, story) : []), [pool, story]);

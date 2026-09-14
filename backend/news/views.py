@@ -328,12 +328,14 @@ def track(request):
     article = ArticlePage.objects.filter(slug=slug).first() if slug else None
     visitor = visitor_hash(request)
     cutoff = timezone.now() - timedelta(minutes=30)
-    already = PageView.objects.filter(visitor=visitor, path=path, created_at__gte=cutoff).exists()
+    # Every article load is a reader view; deduplicate only generic page visits.
+    already = not article and PageView.objects.filter(visitor=visitor, path=path, created_at__gte=cutoff).exists()
     if not already:
         PageView.objects.create(path=path, article=article, visitor=visitor)
         if article:
             ArticlePage.objects.filter(pk=article.pk).update(read_count=F("read_count") + 1)
-    return JsonResponse({"ok": True}, status=201)
+            article.refresh_from_db(fields=["read_count"])
+    return JsonResponse({"ok": True, "read_count": article.read_count if article else None}, status=201)
 
 @csrf_exempt
 @require_http_methods(["POST"])

@@ -118,6 +118,18 @@ export async function fetchStory(slug: string): Promise<Story> {
   return toStory(await response.json());
 }
 
+export async function trackStoryView(slug: string, path: string): Promise<number | null> {
+  if (!API_URL) return null;
+  const response = await fetch(`${API_URL}/api/track/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({ slug: decodeSlug(slug), path }),
+  });
+  if (!response.ok) return null;
+  const data = await response.json();
+  return typeof data.read_count === "number" ? data.read_count : null;
+}
+
 export async function fetchMostRead(limit = 10): Promise<Story[]> {
   if (!API_URL) throw new Error("API is not configured");
   const response = await fetch(`${API_URL}/api/most-read/?limit=${limit}`);

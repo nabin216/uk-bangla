@@ -44,7 +44,8 @@ body { margin: 0; font-family: var(--font-sans); font-size: 16px; line-height: 1
 /* Article reading page */
 .article-body { font-family: var(--font-reading); font-size: 1.2rem; line-height: 1.75; color: #1f2937; }
 .dark .article-body { color: #d9d6cd; }
-.article-body p { margin: 0 0 1.5rem; }
+.article-body p { margin: 0 0 1.5rem; text-align: justify; text-justify: inter-word; hyphens: auto; }
+.article-body a { overflow-wrap: anywhere; }
 .article-body h2, .article-body h3 { font-family: var(--font-serif); font-weight: 700; line-height: 1.2; margin: 2.75rem 0 1rem; letter-spacing: -0.01em; }
 .font-bengali .article-body h2, .font-bengali .article-body h3 { font-family: "Hind Siliguri", "Noto Serif Bengali", sans-serif; font-weight: 600; }
 .article-body h2 { font-size: 1.7rem; }
@@ -60,6 +61,13 @@ body { margin: 0; font-family: var(--font-sans); font-size: 16px; line-height: 1
 .article-dropcap > p:first-of-type::first-letter { float: left; font-family: var(--font-serif); font-weight: 900; font-size: 4.2rem; line-height: 0.82; padding: 0.35rem 0.6rem 0 0; color: #0f2f57; }
 .dark .article-dropcap > p:first-of-type::first-letter { color: #f5c451; }
 .font-bengali .article-dropcap > p:first-of-type::first-letter { float: none; font-size: inherit; padding: 0; color: inherit; }
+@media (max-width: 640px) {
+  .article-body { font-size: 1.08rem; line-height: 1.75; }
+  .font-bengali .article-body { font-size: 1.12rem; line-height: 1.95; }
+  .article-body p, .font-bengali .article-body p { margin-bottom: 1.25rem; }
+  .article-body h2 { font-size: 1.45rem; }
+  .article-body h3 { font-size: 1.2rem; }
+}
 @media (prefers-reduced-motion: reduce) { .animate-marquee { animation: none; } }
 
 @media print {

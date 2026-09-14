@@ -41,7 +41,7 @@ function Frame({ children }: { children: ReactNode }) {
   }, [savedOpen, stories.length]);
 
   useEffect(() => {
-    if (!API_URL || !pathname) return;
+    if (!API_URL || !pathname || pathname.startsWith("/article/")) return;
     const slug = pathname.startsWith("/article/") ? pathname.split("/")[2] : undefined;
     fetch(`${API_URL}/api/track/`, {
       method: "POST",
