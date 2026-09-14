@@ -14,7 +14,7 @@ git fetch --prune origin
 git reset --hard origin/main
 
 cd "$REPO/frontend"
-npm ci --no-audit --no-fund
+npm ci --no-audit --no-fund --jobs=1
 npm run build
 
 sudo systemctl restart ukbangla-web
