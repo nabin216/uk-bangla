@@ -11,6 +11,7 @@ git fetch --prune origin
 git reset --hard origin/main
 
 cd "$REPO/backend"
+sudo systemctl stop ukbangla || true
 "$VENV/bin/pip" install --upgrade pip
 "$VENV/bin/pip" install -r requirements.txt
 "$VENV/bin/python" manage.py migrate --noinput
