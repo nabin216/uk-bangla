@@ -15,7 +15,7 @@ export default function CategoryGrid({
   return (
     <section className="mb-10">
       <div className="mb-4 flex items-center justify-between border-b border-slate-300 pb-2">
-        <h2 className="font-serif text-xl font-black">{heading}</h2>
+        <h2 className="rounded-sm border border-blue-200 border-l-4 border-l-blue-800 bg-blue-50 px-3 py-1 font-serif text-xl font-black leading-tight text-blue-950 dark:border-slate-700 dark:border-l-amber-400 dark:bg-slate-900 dark:text-amber-300">{heading}</h2>
       </div>
       <div className="grid grid-cols-1 gap-7 sm:grid-cols-3 sm:gap-5">
         {stories.map((story) => (

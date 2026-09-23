@@ -20,15 +20,17 @@ const FALLBACK_MENU: NavLink[] = [
 
 export default function Header({ dark, onTheme }: Props) {
   const { language, setLanguage, t } = useLanguage();
-  const [dates, setDates] = useState({ en: "", bn: "" });
+  const [dates, setDates] = useState({ en: "", day: "", bn: "" });
   const [site, setSite] = useState<SiteChrome | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const id = window.setTimeout(() => {
       const now = new Date();
+      const locale = language === "bn" ? "bn-BD" : "en-GB";
       setDates({
-        en: now.toLocaleDateString(language === "bn" ? "bn-BD" : "en-GB", { day: "numeric", month: "long", year: "numeric" }),
+        en: now.toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric" }),
+        day: now.toLocaleDateString(locale, { weekday: "long" }),
         bn: bengaliDate(now),
       });
     }, 0);
@@ -65,6 +67,7 @@ export default function Header({ dark, onTheme }: Props) {
         <div className="mx-auto flex max-w-[1080px] items-center justify-between gap-1 px-4 whitespace-nowrap sm:gap-3 sm:px-6">
           <span suppressHydrationWarning className="min-w-0 shrink truncate font-bold text-blue-800 dark:text-amber-400">
             {dates.en}
+            {dates.day && <span className="font-medium text-slate-500 dark:text-slate-400"> · {dates.day}</span>}
             {dates.bn && <span className="font-medium text-slate-500 dark:text-slate-400"> · {dates.bn}</span>}
           </span>
           <a href="https://www.ukbanglaguardian.com" className="hidden min-w-0 shrink truncate text-[9px] font-semibold text-blue-800 hover:underline sm:block sm:text-xs dark:text-amber-400">

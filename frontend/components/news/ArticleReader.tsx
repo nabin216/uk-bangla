@@ -299,7 +299,7 @@ export default function ArticleReader({ story, related }: { story: Story; relate
               )}
             </div>
 
-            <h1 className="mt-4 font-serif text-[2rem] font-black leading-[1.08] tracking-[-0.01em] text-balance sm:text-[2.7rem]">
+            <h1 className="mt-4 font-serif text-[1.75rem] font-black leading-[1.12] tracking-[-0.01em] text-balance sm:text-[2.7rem]">
               {story.title[language]}
             </h1>
 

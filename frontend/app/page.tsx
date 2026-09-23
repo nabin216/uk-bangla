@@ -89,7 +89,7 @@ export default function Home() {
     const across = (acrossPool.length ? acrossPool : feed.filter((s) => !used.has(s.id))).slice(0, 3);
     across.forEach((s) => used.add(s.id));
 
-    const more = feed.filter((s) => !used.has(s.id)).slice(0, 6);
+    const more = feed.filter((s) => !used.has(s.id)).slice(0, 8);
     more.forEach((s) => used.add(s.id));
 
     return { hero, sponsor, across, more };
