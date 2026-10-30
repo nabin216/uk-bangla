@@ -13,10 +13,9 @@ export default function NewsGrid({
   lang?: Language;
   compact?: boolean;
 }) {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
   const { toggleSavedArticle, savedArticleIds } = useSavedArticles();
   const view = lang ?? language;
-  const locale = view === "bn" ? "bn-BD" : "en-GB";
   return (
     <section className={compact ? "grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-5" : "grid grid-cols-1 gap-5 sm:grid-cols-3"}>
       {stories.map((story) => (
@@ -30,11 +29,7 @@ export default function NewsGrid({
             <h3 onClick={() => onOpen(story)} className="mt-2 cursor-pointer font-serif text-xl font-bold leading-tight sm:text-lg">
               {story.title[view]}
             </h3>
-            <div className="mt-5 flex items-center justify-between gap-2 border-t pt-3 text-sm text-slate-500">
-              <span>
-                {story.readMinutes ?? 4} {t("minRead")}
-                {story.readCount != null ? ` · ${story.readCount.toLocaleString(locale)} ${t("reads")}` : ""} →
-              </span>
+            <div className="mt-5 flex items-center justify-end gap-2 border-t pt-3 text-sm text-slate-500">
               <button onClick={(e) => { e.stopPropagation(); toggleSavedArticle(story.id); }} className="text-base">
                 {savedArticleIds.includes(story.id) ? "🔖" : "♡"}
               </button>

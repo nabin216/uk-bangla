@@ -23,6 +23,7 @@ export default function Header({ dark, onTheme }: Props) {
   const [dates, setDates] = useState({ en: "", day: "", bn: "" });
   const [site, setSite] = useState<SiteChrome | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   useEffect(() => {
     const id = window.setTimeout(() => {
@@ -46,6 +47,18 @@ export default function Header({ dark, onTheme }: Props) {
 
   const menu = site?.menu?.length ? site.menu : FALLBACK_MENU;
   const settings = site?.settings;
+  const sections: NavLink[] = (site?.sections ?? []).map((sec) => ({
+    label: { en: sec.name, bn: sec.name_bn || sec.name },
+    url: `/category/${sec.slug}`,
+  }));
+  const menuUrls = new Set(menu.map((item) => item.url));
+  const extraSections = sections.filter((sec) => !menuUrls.has(sec.url));
+  const moreLabel = language === "bn" ? "আরও" : "More";
+  // Items 0..BAR_SM-1 always sit in the bar; BAR_SM..BAR_LG-1 only on wide screens; the rest live under "More".
+  const BAR_SM = 5;
+  const BAR_LG = 8;
+  const overflowMenu = menu.slice(BAR_SM);
+  const moreOnlyBelowLg = menu.length <= BAR_LG && extraSections.length === 0;
 
   const banner = settings?.header_banner;
   const bannerSrc =
@@ -124,13 +137,43 @@ export default function Header({ dark, onTheme }: Props) {
         )}
       </div>
       <nav className="overflow-visible border-t border-slate-200 dark:border-slate-800">
-        <div className="mx-auto hidden max-w-[1080px] justify-center gap-6 overflow-x-auto px-4 py-2 text-xs font-bold uppercase tracking-wider sm:flex sm:px-6">
-          {menu.map((item) => (
-            <Link key={item.url} href={item.url} className="whitespace-nowrap hover:text-blue-700 dark:hover:text-amber-400">
+        <div className="mx-auto hidden max-w-[1080px] items-center justify-center gap-6 px-4 py-2 text-xs font-bold uppercase tracking-wider sm:flex sm:px-6">
+          {menu.slice(0, BAR_LG).map((item, i) => (
+            <Link
+              key={item.url}
+              href={item.url}
+              className={`whitespace-nowrap hover:text-blue-700 dark:hover:text-amber-400 ${i >= BAR_SM ? "hidden lg:inline" : ""}`}
+            >
               {item.label[language] || item.label.en}
             </Link>
           ))}
+          {(overflowMenu.length > 0 || extraSections.length > 0) && (
+            <button
+              type="button"
+              onClick={() => setMoreOpen((open) => !open)}
+              aria-expanded={moreOpen}
+              className={`whitespace-nowrap uppercase tracking-wider hover:text-blue-700 dark:hover:text-amber-400 ${moreOnlyBelowLg ? "lg:hidden" : ""}`}
+            >
+              {moreLabel} {moreOpen ? "▴" : "▾"}
+            </button>
+          )}
         </div>
+        {moreOpen && (
+          <div className={`hidden border-t border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900 sm:block ${moreOnlyBelowLg ? "lg:hidden" : ""}`}>
+            <div className="mx-auto grid max-w-[1080px] grid-cols-3 gap-x-6 gap-y-1 px-6 py-4 text-sm font-bold md:grid-cols-4 lg:grid-cols-5">
+              {[...overflowMenu, ...extraSections].map((item, i) => (
+                <Link
+                  key={item.url}
+                  href={item.url}
+                  onClick={() => setMoreOpen(false)}
+                  className={`rounded px-2 py-1.5 hover:bg-white hover:text-blue-700 dark:hover:bg-slate-800 dark:hover:text-amber-400 ${i < BAR_LG - BAR_SM && i < overflowMenu.length ? "lg:hidden" : ""}`}
+                >
+                  {item.label[language] || item.label.en}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </nav>
       <div className={`fixed inset-0 z-[60] bg-black/30 transition-opacity sm:hidden ${menuOpen ? "opacity-100" : "pointer-events-none opacity-0"}`} onClick={() => setMenuOpen(false)} />
       <aside className={`fixed right-0 top-4 z-[70] flex max-h-[calc(100vh-2rem)] w-[min(70vw,16rem)] flex-col overflow-y-auto rounded-l-xl border border-white/30 bg-white/70 p-5 shadow-2xl backdrop-blur-xl transition-transform duration-300 dark:border-slate-600/50 dark:bg-slate-900/75 sm:hidden ${menuOpen ? "translate-x-0" : "translate-x-full"}`}>
@@ -149,6 +192,21 @@ export default function Header({ dark, onTheme }: Props) {
               {item.label[language] || item.label.en}
             </Link>
           ))}
+          {extraSections.length > 0 && (
+            <>
+              <span className="mt-3 border-t border-slate-200 px-3 pt-3 text-xs uppercase tracking-wider text-slate-500 dark:border-slate-700 dark:text-slate-400">{moreLabel}</span>
+              {extraSections.map((item) => (
+                <Link
+                  key={item.url}
+                  href={item.url}
+                  onClick={() => setMenuOpen(false)}
+                  className="rounded px-3 py-3 hover:bg-slate-100 hover:text-blue-700 dark:hover:bg-slate-800 dark:hover:text-amber-400"
+                >
+                  {item.label[language] || item.label.en}
+                </Link>
+              ))}
+            </>
+          )}
         </div>
       </aside>
     </header>
