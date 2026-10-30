@@ -86,7 +86,8 @@ export default function Home() {
     const sections = site.sections.filter((sec) => !ENGLISH_SLUGS.includes(sec.slug));
     Promise.all(
       sections.map((section) =>
-        fetchStories(`?category=${encodeURIComponent(section.slug)}&limit=${SECTION_BLOCK_SIZE}`)
+        // Over-fetch so the block can still fill up after dropping stories already shown higher up.
+        fetchStories(`?category=${encodeURIComponent(section.slug)}&limit=${SECTION_BLOCK_SIZE * 3}`)
           .then((stories) => ({ section, stories }))
           .catch(() => ({ section, stories: [] as Story[] })),
       ),
@@ -126,6 +127,20 @@ export default function Home() {
     const fromFeed = stories.filter(isEnglishNews);
     return fromFeed.length ? fromFeed : storiesData.filter((story) => story.category.toLowerCase() === "english");
   }, [englishStories, stories]);
+
+  // Each story appears once on the page: section blocks skip anything already shown above them.
+  const visibleBlocks = useMemo(() => {
+    const shown = new Set(
+      [hero, sponsor, ...across, ...more, ...english.slice(0, 6)].filter(Boolean).map((s) => (s as Story).id),
+    );
+    return sectionBlocks
+      .map(({ section, stories: sectionStories }) => {
+        const fresh = sectionStories.filter((s) => !shown.has(s.id)).slice(0, SECTION_BLOCK_SIZE);
+        fresh.forEach((s) => shown.add(s.id));
+        return { section, stories: fresh };
+      })
+      .filter((block) => block.stories.length > 0);
+  }, [sectionBlocks, hero, sponsor, across, more, english]);
   const liveOpinionStories = mostRead.filter((story) => story.section === "opinion" || story.category.toLowerCase() === "opinion");
   const opinionStories = liveOpinionStories.length
     ? liveOpinionStories
@@ -164,7 +179,7 @@ export default function Home() {
           </div>
         )}
 
-        {sectionBlocks.map(({ section, stories: sectionStories }, i) => {
+        {visibleBlocks.map(({ section, stories: sectionStories }, i) => {
           const ad = sectionAds.length && (i + 1) % SECTIONS_PER_AD === 0
             ? sectionAds[((i + 1) / SECTIONS_PER_AD - 1) % sectionAds.length]
             : null;
