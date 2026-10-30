@@ -1,8 +1,8 @@
 import { API_URL } from "@/lib/api";
-import type { HeaderBanner } from "@/types";
+import type { Advertisement, HeaderBanner } from "@/types";
 
-export default function AdBanner({ banner }: { banner: HeaderBanner }) {
-  if (!banner.enabled || !banner.image) return null;
+export default function AdBanner({ banner }: { banner: HeaderBanner | Advertisement }) {
+  if (("enabled" in banner && !banner.enabled) || !banner.image) return null;
 
   const image = banner.image.startsWith("/") ? `${API_URL}${banner.image}` : banner.image;
   const content = (

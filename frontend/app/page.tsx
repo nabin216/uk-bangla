@@ -12,7 +12,7 @@ import ReaderPoll from "@/components/widgets/ReaderPoll";
 import Newsletter from "@/components/widgets/Newsletter";
 import { storiesData } from "@/data/storiesData";
 import { useLanguage } from "@/context/LanguageContext";
-import type { HomeHeadings, SiteChrome, Story } from "@/types";
+import type { AdPlacement, HomeHeadings, SiteChrome, SiteSection, Story } from "@/types";
 import { API_URL, fetchMostRead, fetchSite, fetchStories } from "@/lib/api";
 
 const MOST_READ_FALLBACK = ["story-6", "opinion-demo", "story-3", "story-5"];
@@ -26,6 +26,13 @@ const ACROSS_SECTIONS = ["uk", "bangladesh"];
 // English-language coverage lives only in the "English News" block / category,
 // never in the Bangla-edition feeds. Accept both slugs seen in the wild.
 const isEnglishNews = (s: Story) => s.section === "english-news" || s.section === "english";
+const ENGLISH_SLUGS = ["english-news", "english"];
+// Each section gets a block of this many stories; sections with no stories are skipped.
+const SECTION_BLOCK_SIZE = 4;
+// A "between sections" ad goes after every this many section blocks.
+const SECTIONS_PER_AD = 2;
+
+type SectionBlock = { section: SiteSection; stories: Story[] };
 
 export default function Home() {
   const router = useRouter();
@@ -47,6 +54,7 @@ export default function Home() {
   );
   const [site, setSite] = useState<SiteChrome | null>(null);
   const [englishStories, setEnglishStories] = useState<Story[]>([]);
+  const [sectionBlocks, setSectionBlocks] = useState<SectionBlock[]>([]);
   const [loading, setLoading] = useState(Boolean(API_URL));
   const [apiError, setApiError] = useState(false);
 
@@ -72,8 +80,26 @@ export default function Home() {
       .finally(() => setLoading(false));
   }, [searchQuery]);
 
+  useEffect(() => {
+    if (!API_URL || searchQuery || !site?.sections?.length) return;
+    let alive = true;
+    const sections = site.sections.filter((sec) => !ENGLISH_SLUGS.includes(sec.slug));
+    Promise.all(
+      sections.map((section) =>
+        fetchStories(`?category=${encodeURIComponent(section.slug)}&limit=${SECTION_BLOCK_SIZE}`)
+          .then((stories) => ({ section, stories }))
+          .catch(() => ({ section, stories: [] as Story[] })),
+      ),
+    ).then((blocks) => {
+      if (alive) setSectionBlocks(blocks.filter((block) => block.stories.length > 0));
+    });
+    return () => { alive = false; };
+  }, [site, searchQuery]);
+
   const heading = (key: keyof HomeHeadings) =>
     site?.settings.home_headings?.[key]?.[language] || FALLBACK_HEADINGS[key];
+  const adsFor = (placement: AdPlacement) => (site?.ads ?? []).filter((ad) => ad.placement === placement);
+  const sectionAds = adsFor("home_sections");
 
   const { hero, sponsor, across, more } = useMemo(() => {
     // The Bangla-edition feeds never carry English-News stories.
@@ -115,6 +141,7 @@ export default function Home() {
         {!loading && !stories.length && !apiError && <p className="mb-6 text-sm text-slate-500">No stories are available yet.</p>}
         {hero && <LeadStoryHero story={hero} onOpen={() => openStory(hero)} />}
         {sponsor && <SponsoredCard story={sponsor} onOpen={() => openStory(sponsor)} />}
+        {adsFor("home_top").map((ad, i) => <AdBanner key={`top-${i}`} banner={ad} />)}
         <CategoryGrid stories={across} heading={heading("across")} onOpen={openStory} />
         {site?.settings.header_banner && <AdBanner banner={site.settings.header_banner} />}
         <div className="mb-3 flex items-end justify-between">
@@ -137,10 +164,36 @@ export default function Home() {
           </div>
         )}
 
+        {sectionBlocks.map(({ section, stories: sectionStories }, i) => {
+          const ad = sectionAds.length && (i + 1) % SECTIONS_PER_AD === 0
+            ? sectionAds[((i + 1) / SECTIONS_PER_AD - 1) % sectionAds.length]
+            : null;
+          return (
+            <div key={section.slug}>
+              <div className="mt-10">
+                <div className="mb-3 flex items-end justify-between border-b-2 border-[#0f2f57] pb-1 dark:border-amber-400">
+                  <h2 className="font-serif text-lg font-bold">
+                    {language === "bn" ? section.name_bn || section.name : section.name}
+                  </h2>
+                  <button
+                    onClick={() => router.push(`/category/${section.slug}`)}
+                    className="text-[10px] font-bold uppercase tracking-wider text-blue-900 hover:underline dark:text-amber-400"
+                  >
+                    {language === "bn" ? "সব খবর →" : "All →"}
+                  </button>
+                </div>
+                <NewsGrid stories={sectionStories} onOpen={openStory} compact />
+              </div>
+              {ad && <AdBanner banner={ad} />}
+            </div>
+          );
+        })}
+
         <div className="my-6 grid gap-3 lg:grid-cols-7">
           <div className="lg:col-span-3"><ReaderPoll /></div>
           {opinionStories.length > 0 && <div className="lg:col-span-4"><MostRead stories={opinionStories} heading={heading("opinion")} onOpen={openStory} /></div>}
         </div>
+        {adsFor("home_bottom").map((ad, i) => <AdBanner key={`bottom-${i}`} banner={ad} />)}
         <Newsletter />
       </main>
     </>

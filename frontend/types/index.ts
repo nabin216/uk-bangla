@@ -52,6 +52,9 @@ export type HeaderBanner = {
   alt: string;
 };
 
+export type AdPlacement = "home_top" | "home_sections" | "home_bottom";
+export type Advertisement = { placement: AdPlacement; image: string; link: string; alt: string };
+
 export type SocialLink = { label: string; url: string; glyph: string };
 export type FooterLink = { column: string; label: LocalizedText; url: string };
 export type SiteSection = { id: number; name: string; name_bn: string; slug: string };
@@ -62,6 +65,7 @@ export type SiteChrome = {
   social: SocialLink[];
   footer_links: FooterLink[];
   sections: SiteSection[];
+  ads?: Advertisement[];
   masthead: MastheadMember[];
   settings: {
     brand_name: string;

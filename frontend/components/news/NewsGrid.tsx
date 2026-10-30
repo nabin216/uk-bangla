@@ -29,7 +29,7 @@ export default function NewsGrid({
             <h3 onClick={() => onOpen(story)} className="mt-2 cursor-pointer font-serif text-xl font-bold leading-tight sm:text-lg">
               {story.title[view]}
             </h3>
-            <div className="mt-5 flex items-center justify-end gap-2 border-t pt-3 text-sm text-slate-500">
+            <div className="mt-3 flex items-center justify-end gap-2 text-sm text-slate-500">
               <button onClick={(e) => { e.stopPropagation(); toggleSavedArticle(story.id); }} className="text-base">
                 {savedArticleIds.includes(story.id) ? "🔖" : "♡"}
               </button>

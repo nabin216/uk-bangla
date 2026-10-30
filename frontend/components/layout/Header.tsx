@@ -148,32 +148,32 @@ export default function Header({ dark, onTheme }: Props) {
             </Link>
           ))}
           {(overflowMenu.length > 0 || extraSections.length > 0) && (
-            <button
-              type="button"
-              onClick={() => setMoreOpen((open) => !open)}
-              aria-expanded={moreOpen}
-              className={`whitespace-nowrap uppercase tracking-wider hover:text-blue-700 dark:hover:text-amber-400 ${moreOnlyBelowLg ? "lg:hidden" : ""}`}
-            >
-              {moreLabel} {moreOpen ? "▴" : "▾"}
-            </button>
+            <div className={`relative ${moreOnlyBelowLg ? "lg:hidden" : ""}`}>
+              <button
+                type="button"
+                onClick={() => setMoreOpen((open) => !open)}
+                aria-expanded={moreOpen}
+                className="whitespace-nowrap uppercase tracking-wider hover:text-blue-700 dark:hover:text-amber-400"
+              >
+                {moreLabel} {moreOpen ? "▴" : "▾"}
+              </button>
+              {moreOpen && (
+                <div className="absolute right-0 top-full z-50 mt-2 flex max-h-[70vh] min-w-48 flex-col overflow-y-auto rounded-md border border-slate-200 bg-white py-1 text-sm normal-case tracking-normal shadow-lg dark:border-slate-700 dark:bg-slate-900">
+                  {[...overflowMenu, ...extraSections].map((item, i) => (
+                    <Link
+                      key={item.url}
+                      href={item.url}
+                      onClick={() => setMoreOpen(false)}
+                      className={`whitespace-nowrap px-4 py-2 hover:bg-slate-100 hover:text-blue-700 dark:hover:bg-slate-800 dark:hover:text-amber-400 ${i < BAR_LG - BAR_SM && i < overflowMenu.length ? "lg:hidden" : ""}`}
+                    >
+                      {item.label[language] || item.label.en}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </div>
-        {moreOpen && (
-          <div className={`hidden border-t border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900 sm:block ${moreOnlyBelowLg ? "lg:hidden" : ""}`}>
-            <div className="mx-auto grid max-w-[1080px] grid-cols-3 gap-x-6 gap-y-1 px-6 py-4 text-sm font-bold md:grid-cols-4 lg:grid-cols-5">
-              {[...overflowMenu, ...extraSections].map((item, i) => (
-                <Link
-                  key={item.url}
-                  href={item.url}
-                  onClick={() => setMoreOpen(false)}
-                  className={`rounded px-2 py-1.5 hover:bg-white hover:text-blue-700 dark:hover:bg-slate-800 dark:hover:text-amber-400 ${i < BAR_LG - BAR_SM && i < overflowMenu.length ? "lg:hidden" : ""}`}
-                >
-                  {item.label[language] || item.label.en}
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
       </nav>
       <div className={`fixed inset-0 z-[60] bg-black/30 transition-opacity sm:hidden ${menuOpen ? "opacity-100" : "pointer-events-none opacity-0"}`} onClick={() => setMenuOpen(false)} />
       <aside className={`fixed right-0 top-4 z-[70] flex max-h-[calc(100vh-2rem)] w-[min(70vw,16rem)] flex-col overflow-y-auto rounded-l-xl border border-white/30 bg-white/70 p-5 shadow-2xl backdrop-blur-xl transition-transform duration-300 dark:border-slate-600/50 dark:bg-slate-900/75 sm:hidden ${menuOpen ? "translate-x-0" : "translate-x-full"}`}>

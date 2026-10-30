@@ -413,6 +413,33 @@ class MastheadMember(models.Model):
         return f"{self.role_en}: {self.name_en}"
 
 @register_snippet
+class Advertisement(models.Model):
+    PLACEMENT_CHOICES = [
+        ("home_top", "Home: below the lead story"),
+        ("home_sections", "Home: between section blocks (rotates)"),
+        ("home_bottom", "Home: above the newsletter"),
+    ]
+    name = models.CharField(max_length=100, help_text="Internal name, e.g. the advertiser")
+    placement = models.CharField(max_length=30, choices=PLACEMENT_CHOICES, default="home_sections")
+    image = models.ForeignKey(get_image_model_string(), null=True, blank=True, on_delete=models.SET_NULL, related_name="+", help_text="Recommended 970×90 or 728×90")
+    image_url = models.URLField(blank=True, help_text="External image URL, used if no image is uploaded")
+    link = models.URLField(blank=True, help_text="Where the ad links to when clicked")
+    alt = models.CharField(max_length=150, blank=True, default="Advertisement")
+    sort_order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    panels = [
+        FieldPanel("name"), FieldPanel("placement"), FieldPanel("image"), FieldPanel("image_url"),
+        FieldPanel("link"), FieldPanel("alt"), FieldPanel("sort_order"), FieldPanel("is_active"),
+    ]
+
+    class Meta:
+        ordering = ["placement", "sort_order", "id"]
+
+    def __str__(self):
+        return f"{self.get_placement_display()}: {self.name}"
+
+@register_snippet
 class InfoPage(models.Model):
     slug = BanglaSlugField(unique=True, help_text="about, contact, privacy, …")
     title_en = models.CharField(max_length=150)

@@ -12,7 +12,7 @@ from django.utils.html import strip_tags
 from django.utils.text import Truncator
 from wagtail.rich_text import expand_db_html
 from .models import (
-    ArticlePage, Comment, FooterLink, InfoPage, LiveStatus, MastheadMember,
+    Advertisement, ArticlePage, Comment, FooterLink, InfoPage, LiveStatus, MastheadMember,
     NewsletterSubscription, PageView, Poll, Section, SiteSettings, SocialLink,
     TickerItem, TrendingTag,
 )
@@ -160,6 +160,14 @@ def homepage(request):
 def section_json(section):
     return {"id": section.id, "name": section.name_en, "name_bn": section.name_bn, "slug": section.slug}
 
+def _banner_url(image, fallback_url):
+    if image:
+        try:
+            return image.get_rendition("width-1200").url
+        except Exception:
+            return image.file.url
+    return fallback_url or None
+
 def site(request):
     settings_obj = SiteSettings.load(request_or_site=request)
 
@@ -177,14 +185,12 @@ def site(request):
             if live.gbp_to_bdt_rate:
                 fx_rate = float(live.gbp_to_bdt_rate)
 
-    banner_image = None
-    if settings_obj.header_banner:
-        try:
-            banner_image = settings_obj.header_banner.get_rendition("width-1200").url
-        except Exception:
-            banner_image = settings_obj.header_banner.file.url
-    elif settings_obj.header_banner_image_url:
-        banner_image = settings_obj.header_banner_image_url
+    banner_image = _banner_url(settings_obj.header_banner, settings_obj.header_banner_image_url)
+    ads = []
+    for ad in Advertisement.objects.filter(is_active=True).select_related("image"):
+        image = _banner_url(ad.image, ad.image_url)
+        if image:
+            ads.append({"placement": ad.placement, "image": image, "link": ad.link, "alt": ad.alt or "Advertisement"})
 
     return _cache(JsonResponse({
         "settings": {
@@ -233,6 +239,7 @@ def site(request):
             for link in FooterLink.objects.all()
         ],
         "sections": [section_json(s) for s in Section.objects.all()],
+        "ads": ads,
         "masthead": [
             {"role": dual(m.role_en, m.role_bn), "name": dual(m.name_en, m.name_bn)}
             for m in MastheadMember.objects.all()
