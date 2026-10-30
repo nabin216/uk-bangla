@@ -24,6 +24,7 @@ export const dictionaries: Record<Language, Translation> = {
     responses: "Responses", noComments: "No comments yet. Start the conversation.",
     yourName: "Your name", yourComment: "Share your thoughts", postComment: "Post comment",
     posting: "Posting…", commentPosted: "Your comment has been posted.", commentsLoading: "Loading comments…",
+    cardPreview: "News card preview", preparingCard: "Preparing card…", download: "Download", close: "Close",
   },
   bn: {
     menu: "মেনু", saved: "সংরক্ষিত", home: "হোম", uk: "যুক্তরাজ্য", bangladesh: "বাংলাদেশ",
@@ -48,5 +49,6 @@ export const dictionaries: Record<Language, Translation> = {
     responses: "মন্তব্য", noComments: "এখনও কোনো মন্তব্য নেই। আলোচনা শুরু করুন।",
     yourName: "আপনার নাম", yourComment: "আপনার মতামত লিখুন", postComment: "মন্তব্য করুন",
     posting: "পাঠানো হচ্ছে…", commentPosted: "আপনার মন্তব্য পোস্ট হয়েছে।", commentsLoading: "মন্তব্য লোড হচ্ছে…",
+    cardPreview: "নিউজ কার্ড প্রিভিউ", preparingCard: "কার্ড তৈরি হচ্ছে…", download: "ডাউনলোড", close: "বন্ধ করুন",
   },
 };

@@ -80,6 +80,8 @@ export default function ArticleReader({ story, related }: { story: Story; relate
   const [speaking, setSpeaking] = useState(false);
   const [copied, setCopied] = useState(false);
   const [url, setUrl] = useState("");
+  const [cardOpen, setCardOpen] = useState(false);
+  const [cardPreview, setCardPreview] = useState<{ blob: Blob; url: string } | null>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
 
   const bodyHtml = useMemo(() => buildBodyHtml(story.body[language] || story.excerpt?.[language] || ""), [story, language]);
@@ -152,12 +154,12 @@ export default function ArticleReader({ story, related }: { story: Story; relate
 
   const printArticle = () => window.print();
 
-  const saveCard = async () => {
+  const buildCard = async (): Promise<Blob | null> => {
     const canvas = document.createElement("canvas");
     canvas.width = 1080;
     canvas.height = 1080;
     const context = canvas.getContext("2d");
-    if (!context) return;
+    if (!context) return null;
 
     context.fillStyle = "#f4f2ec";
     context.fillRect(0, 0, canvas.width, canvas.height);
@@ -208,16 +210,63 @@ export default function ArticleReader({ story, related }: { story: Story; relate
     context.font = "600 22px sans-serif";
     context.fillText(`${story.date || ""}  |  ukbanglaguardian.com`, 55, 1048);
 
-    canvas.toBlob((blob) => {
-      if (!blob) return;
-      const downloadUrl = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = downloadUrl;
-      link.download = `uk-bangla-${story.id}-social-card.png`;
-      link.click();
-      URL.revokeObjectURL(downloadUrl);
-    }, "image/png");
+    return new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
   };
+
+  const cardFileName = `uk-bangla-${story.id}-social-card.png`;
+
+  const openCardPreview = async () => {
+    setCardOpen(true);
+    setCardPreview(null);
+    const blob = await buildCard();
+    if (!blob) {
+      setCardOpen(false);
+      return;
+    }
+    setCardPreview({ blob, url: URL.createObjectURL(blob) });
+  };
+
+  const closeCardPreview = () => {
+    setCardOpen(false);
+    setCardPreview((current) => {
+      if (current) URL.revokeObjectURL(current.url);
+      return null;
+    });
+  };
+
+  const downloadCard = () => {
+    if (!cardPreview) return;
+    const link = document.createElement("a");
+    link.href = cardPreview.url;
+    link.download = cardFileName;
+    link.click();
+  };
+
+  const canShareCard = Boolean(
+    cardPreview &&
+    typeof navigator !== "undefined" &&
+    navigator.canShare?.({ files: [new File([cardPreview.blob], cardFileName, { type: "image/png" })] }),
+  );
+
+  const shareCard = async () => {
+    if (!cardPreview) return;
+    try {
+      await navigator.share({
+        files: [new File([cardPreview.blob], cardFileName, { type: "image/png" })],
+        title: story.title[language],
+        url: url || window.location.href,
+      });
+    } catch {
+      // The reader cancelled the share sheet; the preview stays open.
+    }
+  };
+
+  useEffect(() => {
+    if (!cardOpen) return;
+    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") closeCardPreview(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [cardOpen]);
 
   const encoded = encodeURIComponent(url);
   const encodedTitle = encodeURIComponent(story.title[language]);
@@ -262,6 +311,69 @@ export default function ArticleReader({ story, related }: { story: Story; relate
       <div className="fixed inset-x-0 top-0 z-40 h-1 bg-transparent">
         <div className="h-full bg-amber-500 transition-[width] duration-150 ease-out" style={{ width: `${progress}%` }} />
       </div>
+
+      {cardOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={t("cardPreview")}
+          onClick={closeCardPreview}
+          className="no-print fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm"
+        >
+          <div
+            onClick={(event) => event.stopPropagation()}
+            className="flex max-h-full w-full max-w-md flex-col overflow-hidden rounded-lg bg-white shadow-2xl dark:bg-slate-900"
+          >
+            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-slate-800">
+              <span className="text-sm font-bold text-[#0f2f57] dark:text-amber-400">{t("cardPreview")}</span>
+              <button
+                type="button"
+                onClick={closeCardPreview}
+                aria-label={t("close")}
+                className="rounded px-2 text-2xl leading-none text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                ×
+              </button>
+            </div>
+            <div className="flex min-h-0 flex-1 items-center justify-center bg-slate-100 p-4 dark:bg-slate-950">
+              {cardPreview ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={cardPreview.url} alt={story.title[language]} className="max-h-[60vh] w-full rounded object-contain shadow-md" />
+              ) : (
+                <div className="flex aspect-square w-full items-center justify-center text-sm text-slate-500">
+                  {t("preparingCard")}
+                </div>
+              )}
+            </div>
+            <div className="flex items-center justify-end gap-2 border-t border-slate-200 px-4 py-3 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={closeCardPreview}
+                className="rounded-full border border-slate-300 px-4 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+              >
+                {t("close")}
+              </button>
+              {canShareCard && (
+                <button
+                  type="button"
+                  onClick={shareCard}
+                  className="rounded-full border border-[#0f2f57] px-4 py-1.5 text-xs font-semibold text-[#0f2f57] hover:bg-slate-50 dark:border-amber-400 dark:text-amber-400 dark:hover:bg-slate-800"
+                >
+                  {t("share")}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={downloadCard}
+                disabled={!cardPreview}
+                className="rounded-full border border-amber-500 bg-amber-400 px-4 py-1.5 text-xs font-semibold text-slate-950 hover:bg-amber-300 disabled:opacity-50"
+              >
+                ⬇ {t("download")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="mx-auto max-w-[1140px] px-4 pt-8 sm:px-6">
         <div className="print-only mb-6 border-b border-slate-300 pb-4">
@@ -345,7 +457,7 @@ export default function ArticleReader({ story, related }: { story: Story; relate
                 🖨 {t("print")}
               </button>
               <button
-                onClick={saveCard}
+                onClick={openCardPreview}
                 aria-label={t("saveCard")}
                 className="flex items-center gap-2 rounded-full border border-amber-500 bg-amber-400 px-3 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-amber-300"
               >
