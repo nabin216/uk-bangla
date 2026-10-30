@@ -8,8 +8,9 @@ on:
       - ".github/workflows/deploy-frontend.yml"
   workflow_dispatch:
 
+# Shared with deploy-backend.yml so the two never run at once on the low-memory server.
 concurrency:
-  group: deploy-frontend
+  group: deploy-server
   cancel-in-progress: false
 
 jobs:
