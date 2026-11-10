@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import TickerBanner from "@/components/news/TickerBanner";
 import LeadStoryHero from "@/components/news/LeadStoryHero";
 import LatestList from "@/components/news/LatestList";
-import SectionBlock from "@/components/news/SectionBlock";
 import SectionHeading from "@/components/news/SectionHeading";
 import NewsGrid from "@/components/news/NewsGrid";
 import SponsoredCard from "@/components/news/SponsoredCard";
@@ -28,17 +27,17 @@ const FALLBACK_HEADINGS: Record<keyof HomeHeadings, string> = {
 // never in the Bangla-edition feeds. Accept both slugs seen in the wild.
 const isEnglishNews = (s: Story) => s.section === "english-news" || s.section === "english";
 const ENGLISH_SLUGS = ["english-news", "english"];
-// Each section block shows a lead story plus headlines; sections with no stories are skipped.
-const SECTION_BLOCK_SIZE = 4;
-// Section blocks sit two to a row; a "between sections" ad goes after every this many blocks.
-const SECTIONS_PER_AD = 4;
+// Each section shows one row of cards; sections with no stories are skipped.
+const SECTION_BLOCK_SIZE = 3;
+// A "between sections" ad goes after every this many sections.
+const SECTIONS_PER_AD = 3;
 const LATEST_COUNT = 5;
 
 type SectionStories = { section: SiteSection; stories: Story[] };
 
 export default function Home() {
   const router = useRouter();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const openStory = (story: Story) => router.push(`/article/${story.id}`);
   const [searchQuery] = useState(() => typeof window === "undefined" ? "" : new URLSearchParams(window.location.search).get("q")?.trim() || "");
   const [stories, setStories] = useState<Story[]>(() => {
@@ -135,9 +134,13 @@ export default function Home() {
   }, [sectionBlocks, hero, sponsor]);
 
   const liveOpinionStories = mostRead.filter((story) => story.section === "opinion" || story.category.toLowerCase() === "opinion");
-  const opinionStories = liveOpinionStories.length
-    ? liveOpinionStories
-    : storiesData.filter((story) => story.category.toLowerCase() === "opinion");
+  // Prefer the opinion section's own latest stories; fall back to most-read opinion, then bundled samples.
+  const opinionSection = sectionBlocks.find((block) => block.section.slug === "opinion");
+  const opinionStories = opinionSection?.stories.length
+    ? opinionSection.stories
+    : liveOpinionStories.length
+      ? liveOpinionStories
+      : storiesData.filter((story) => story.category.toLowerCase() === "opinion");
 
   const cmsTicker = (site?.ticker ?? []).map((item) => item[language] || item.en).filter(Boolean);
   const tickerItems = cmsTicker.length ? cmsTicker : feed.slice(0, 5).map((s) => s.title[language]);
@@ -185,17 +188,17 @@ export default function Home() {
                   : null;
                 return (
                   <div key={row[0].section.slug}>
-                    <div className="grid gap-y-10 md:grid-cols-2">
-                      {row.map(({ section, stories: sectionStories }) => (
-                        <div
-                          key={section.slug}
-                          className="min-w-0 border-slate-200 dark:border-slate-800 md:odd:border-r md:odd:pr-7 md:even:pl-7"
-                        >
-                          <SectionBlock section={section} stories={sectionStories} />
-                        </div>
-                      ))}
-                    </div>
-                    {ad ? <AdBanner banner={ad} /> : <div className="h-10" />}
+                    {row.map(({ section, stories: sectionStories }) => (
+                      <section key={section.slug} className="mb-10">
+                        <SectionHeading
+                          title={language === "bn" ? section.name_bn || section.name : section.name}
+                          href={`/category/${section.slug}`}
+                          moreLabel={t("readMore")}
+                        />
+                        <NewsGrid stories={sectionStories} onOpen={openStory} />
+                      </section>
+                    ))}
+                    {ad && <AdBanner banner={ad} />}
                   </div>
                 );
               })}
@@ -216,9 +219,19 @@ export default function Home() {
             </>
           )}
 
-          <div className="my-6 grid gap-3 lg:grid-cols-7">
-            <div className="lg:col-span-3"><ReaderPoll /></div>
-            {opinionStories.length > 0 && <div className="lg:col-span-4"><MostRead stories={opinionStories} heading={heading("opinion")} onOpen={openStory} /></div>}
+          <div className="my-6 grid gap-5 lg:grid-cols-5">
+            <div className="lg:col-span-2"><ReaderPoll /></div>
+            {opinionStories.length > 0 && (
+              <div className="lg:col-span-3">
+                <MostRead
+                  stories={opinionStories}
+                  heading={heading("opinion")}
+                  onOpen={openStory}
+                  href={opinionSection ? "/category/opinion" : undefined}
+                  moreLabel={t("allOpinion")}
+                />
+              </div>
+            )}
           </div>
           {adsFor("home_bottom").map((ad, i) => <AdBanner key={`bottom-${i}`} banner={ad} />)}
           <Newsletter />
