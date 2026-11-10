@@ -1,14 +1,7 @@
 import type { Language, Story } from "@/types";
 import { useLanguage } from "@/context/LanguageContext";
-import { useSavedArticles } from "@/context/SavedArticlesContext";
+import { dateLabel } from "@/lib/timeAgo";
 
-function BookmarkIcon({ filled }: { filled: boolean }) {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" className={`h-4 w-4 stroke-current stroke-[1.8] ${filled ? "fill-current" : "fill-none"}`}>
-      <path strokeLinejoin="round" d="M6 3.75h12a.75.75 0 0 1 .75.75v16.2l-6.75-4.5-6.75 4.5V4.5A.75.75 0 0 1 6 3.75Z" />
-    </svg>
-  );
-}
 
 export default function NewsGrid({
   stories,
@@ -22,12 +15,10 @@ export default function NewsGrid({
   compact?: boolean;
 }) {
   const { language } = useLanguage();
-  const { toggleSavedArticle, savedArticleIds } = useSavedArticles();
   const view = lang ?? language;
   return (
     <section className={compact ? "grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-5" : "grid grid-cols-1 gap-5 sm:grid-cols-3"}>
       {stories.map((story) => {
-        const saved = savedArticleIds.includes(story.id);
         const synopsis = story.synopsis?.[view];
         return (
           <article
@@ -59,20 +50,9 @@ export default function NewsGrid({
               {!compact && synopsis && (
                 <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-slate-600 dark:text-slate-400">{synopsis}</p>
               )}
-              <div className="mt-auto flex items-center justify-between gap-2 pt-3 text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                <span>{story.date}</span>
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); toggleSavedArticle(story.id); }}
-                  aria-label={saved ? "Remove from saved" : "Save article"}
-                  aria-pressed={saved}
-                  className={`-mr-1 rounded-full p-1.5 transition hover:bg-slate-100 dark:hover:bg-slate-800 ${
-                    saved ? "text-accent dark:text-amber-400" : "text-slate-400 hover:text-brand dark:hover:text-amber-400"
-                  }`}
-                >
-                  <BookmarkIcon filled={saved} />
-                </button>
-              </div>
+              <p className="mt-auto pt-3 text-xs font-medium text-slate-500 dark:text-slate-400">
+                {dateLabel(story.publishedAt, view) || story.date}
+              </p>
             </div>
           </article>
         );

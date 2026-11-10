@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Story } from "@/types";
 import { useLanguage } from "@/context/LanguageContext";
+import { dateLabel } from "@/lib/timeAgo";
 
 // Opinion / most-read box: quote-marked headlines with an optional "view all" link.
 export default function MostRead({
@@ -44,7 +45,7 @@ export default function MostRead({
                 </span>
                 <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">
                   {language === "bn" ? story.categoryBn || story.category : story.category}
-                  {story.date && <span> · {story.date}</span>}
+                  {(dateLabel(story.publishedAt, language) || story.date) && <span> · {dateLabel(story.publishedAt, language) || story.date}</span>}
                 </span>
               </span>
               <span aria-hidden className="shrink-0 text-lg text-accent transition group-hover:translate-x-0.5 dark:text-amber-400">→</span>

@@ -2,7 +2,7 @@ import { useState } from "react";
 import Link from "next/link";
 import type { Story } from "@/types";
 import { useLanguage } from "@/context/LanguageContext";
-import { timeAgo } from "@/lib/timeAgo";
+import { dateLabel, timeAgo } from "@/lib/timeAgo";
 import SectionHeading from "@/components/news/SectionHeading";
 
 export default function LatestList({ stories }: { stories: Story[] }) {
@@ -14,7 +14,7 @@ export default function LatestList({ stories }: { stories: Story[] }) {
       <SectionHeading title={t("latestNews")} />
       <ul className="divide-y divide-slate-300/80 dark:divide-slate-800">
         {stories.map((story) => {
-          const when = timeAgo(story.publishedAt, language, now) || story.date;
+          const when = timeAgo(story.publishedAt, language, now) || dateLabel(story.publishedAt, language) || story.date;
           return (
             <li key={story.id} className="py-3 first:pt-0 last:pb-0">
               <Link href={`/article/${story.id}`} className="group block">

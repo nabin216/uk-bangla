@@ -36,3 +36,15 @@ export function dateTimeLabel(iso: string | undefined, language: Language): stri
   const period = language === "bn" ? (hour < 12 ? "পূর্বাহ্ণ" : "অপরাহ্ণ") : hour < 12 ? "am" : "pm";
   return `${day}, ${num(hour % 12 || 12)}:${num(date.getMinutes(), 2)} ${period}`;
 }
+
+// "২৯ অক্টোবর ২০২৬" / "29 October 2026"; "" when the story has no usable date.
+export function dateLabel(iso: string | undefined, language: Language): string {
+  if (!iso) return "";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat(language === "bn" ? "bn-BD" : "en-GB", { day: "numeric", month: "long", year: "numeric" })
+    .formatToParts(date)
+    .filter((part) => part.type !== "literal")
+    .map((part) => part.value)
+    .join(" ");
+}
