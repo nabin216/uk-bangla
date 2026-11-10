@@ -1,4 +1,36 @@
+import Link from "next/link";
 import type { Story } from "@/types";
 import { useLanguage } from "@/context/LanguageContext";
-import { useSavedArticles } from "@/context/SavedArticlesContext";
-export default function LeadStoryHero({ story, onOpen }: { story: Story; onOpen: () => void }) { const { language, t } = useLanguage(); const { savedArticleIds, toggleSavedArticle } = useSavedArticles(); const saved = savedArticleIds.includes(story.id); return <section className="mb-8 grid gap-5 rounded-lg border border-slate-300 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800 sm:grid-cols-2 sm:p-6"><div className="order-2 flex flex-col justify-between p-1 sm:order-1"><div><div className="flex items-center gap-2"><span className="text-[9px] font-bold uppercase text-red-600">{t("lead")}</span><span className="text-[9px] text-slate-400">{story.readMinutes ?? 10} {t("minRead")}{story.readCount != null ? ` · ${story.readCount.toLocaleString(language === "bn" ? "bn-BD" : "en-GB")} ${t("reads")}` : ""}</span></div><h1 onClick={onOpen} className="mt-3 cursor-pointer font-serif text-2xl font-bold leading-[1.05] hover:text-blue-700 dark:hover:text-amber-400 sm:text-4xl">{story.title[language]}</h1><p className="mt-4 max-w-prose text-sm leading-relaxed text-slate-600 dark:text-slate-300">{story.synopsis[language] || story.title[language]}</p></div><div className="mt-5 flex justify-between border-t border-slate-200 pt-3"><button onClick={onOpen} className="text-[10px] font-bold uppercase text-blue-900 dark:text-amber-400">{t("readFull")} →</button><button onClick={() => toggleSavedArticle(story.id)} className="text-sm">{saved ? "🔖" : "♡"}</button></div></div><div className="order-1 sm:order-2"><img onClick={onOpen} src={story.image} alt={story.title.en} fetchPriority="high" decoding="async" className="h-52 w-full cursor-pointer rounded object-cover sm:h-72" /></div></section>; }
+
+export default function LeadStoryHero({ story }: { story: Story }) {
+  const { language, t } = useLanguage();
+  const href = `/article/${story.id}`;
+  return (
+    <article className="grid items-center gap-5 sm:grid-cols-[1.2fr_1fr] sm:gap-7">
+      <Link href={href} className="group block overflow-hidden rounded-md bg-slate-200 dark:bg-slate-800">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={story.image}
+          alt={story.title.en}
+          fetchPriority="high"
+          decoding="async"
+          className="aspect-[16/10] w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+        />
+      </Link>
+      <div className="flex min-w-0 flex-col justify-center">
+        <span className="text-sm font-semibold text-accent dark:text-amber-400">
+          {language === "bn" ? story.categoryBn || story.category : story.category}
+        </span>
+        <h1 className="mt-2 font-serif text-2xl font-bold leading-[1.25] text-slate-950 dark:text-slate-50 sm:text-[1.7rem] lg:text-[1.9rem]">
+          <Link href={href} className="hover:text-brand dark:hover:text-amber-400">{story.title[language]}</Link>
+        </h1>
+        <p className="mt-3 line-clamp-4 text-[15px] leading-relaxed text-slate-600 dark:text-slate-300">
+          {story.synopsis[language] || story.title[language]}
+        </p>
+        <Link href={href} className="mt-3 self-start text-[15px] font-semibold text-accent hover:underline dark:text-amber-400">
+          {t("readFull")} →
+        </Link>
+      </div>
+    </article>
+  );
+}

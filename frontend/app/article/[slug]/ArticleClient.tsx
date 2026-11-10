@@ -3,8 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import ArticleReader from "@/components/news/ArticleReader";
 import { storiesData } from "@/data/storiesData";
-import { API_URL, decodeSlug, fetchStory, fetchStories, trackStoryView } from "@/lib/api";
-import type { Story } from "@/types";
+import { API_URL, decodeSlug, fetchSite, fetchStory, fetchStories, trackStoryView } from "@/lib/api";
+import type { HeaderBanner, Story } from "@/types";
 import { useLanguage } from "@/context/LanguageContext";
 
 function pickRelated(all: Story[], current: Story) {
@@ -21,6 +21,15 @@ export default function ArticleClient() {
   const [pool, setPool] = useState<Story[]>(API_URL ? [] : storiesData);
   const [loading, setLoading] = useState(Boolean(API_URL));
   const [error, setError] = useState(false);
+  const [banner, setBanner] = useState<HeaderBanner | undefined>();
+
+  // The compact inner-page header has no banner, so it runs in the article sidebar instead.
+  useEffect(() => {
+    if (!API_URL) return;
+    let alive = true;
+    fetchSite().then((site) => { if (alive) setBanner(site.settings.header_banner); }).catch(() => undefined);
+    return () => { alive = false; };
+  }, []);
 
   useEffect(() => {
     if (!API_URL) return;
@@ -56,6 +65,7 @@ export default function ArticleClient() {
   }, [slug]);
 
   const related = useMemo(() => (story ? pickRelated(pool, story) : []), [pool, story]);
+  const latest = useMemo(() => pool.filter((item) => item.id !== story?.id).slice(0, 5), [pool, story]);
 
   if (loading) return <main className="mx-auto max-w-3xl p-16 text-sm text-slate-500">{t("storyLoading")}</main>;
   if (!story) {
@@ -68,7 +78,7 @@ export default function ArticleClient() {
 
   return (
     <>
-      <ArticleReader story={story} related={related} />
+      <ArticleReader story={story} related={related} latest={latest} banner={banner} />
       {error && (
         <p className="fixed bottom-4 left-1/2 z-[60] -translate-x-1/2 rounded bg-amber-100 px-4 py-2 text-sm text-amber-900">
           {t("serviceDown")}

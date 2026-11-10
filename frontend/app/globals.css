@@ -8,6 +8,11 @@
   --font-reading: "Spectral", Georgia, serif;
   --font-bengali: "Hind Siliguri", "Noto Sans Bengali", sans-serif;
   --font-bengali-reading: "Tiro Bangla", "Noto Serif Bengali", serif;
+  /* Brand palette: masthead navy and the red used for labels, rules and links */
+  --color-brand: #1b2a7b;
+  --color-brand-dark: #141f5e;
+  --color-accent: #d1202f;
+  --color-paper: #fbf7f0;
 }
 * { box-sizing: border-box; }
 body { margin: 0; font-family: var(--font-sans); font-size: 16px; line-height: 1.5; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
@@ -28,7 +33,7 @@ body { margin: 0; font-family: var(--font-sans); font-size: 16px; line-height: 1
 }
 .font-bengali .article-body {
   font-family: var(--font-bengali-reading);
-  font-size: 1.28rem;
+  font-size: calc(1.28rem * var(--article-scale, 1));
   line-height: 2.05;
   word-spacing: 0.02em;
 }
@@ -42,7 +47,7 @@ body { margin: 0; font-family: var(--font-sans); font-size: 16px; line-height: 1
 .print-only { display: none; }
 
 /* Article reading page */
-.article-body { font-family: var(--font-reading); font-size: 1.2rem; line-height: 1.75; color: #1f2937; }
+.article-body { font-family: var(--font-reading); font-size: calc(1.2rem * var(--article-scale, 1)); line-height: 1.75; color: #1f2937; }
 .dark .article-body { color: #d9d6cd; }
 .article-body p { margin: 0 0 1.5rem; text-align: justify; text-justify: inter-word; hyphens: auto; }
 .article-body a { overflow-wrap: anywhere; }
@@ -62,8 +67,8 @@ body { margin: 0; font-family: var(--font-sans); font-size: 16px; line-height: 1
 .dark .article-dropcap > p:first-of-type::first-letter { color: #f5c451; }
 .font-bengali .article-dropcap > p:first-of-type::first-letter { float: none; font-size: inherit; padding: 0; color: inherit; }
 @media (max-width: 640px) {
-  .article-body { font-size: 1.08rem; line-height: 1.75; }
-  .font-bengali .article-body { font-size: 1.12rem; line-height: 1.95; }
+  .article-body { font-size: calc(1.08rem * var(--article-scale, 1)); line-height: 1.75; }
+  .font-bengali .article-body { font-size: calc(1.12rem * var(--article-scale, 1)); line-height: 1.95; }
   .article-body p, .font-bengali .article-body p { margin-bottom: 1.25rem; }
   .article-body h2 { font-size: 1.45rem; }
   .article-body h3 { font-size: 1.2rem; }

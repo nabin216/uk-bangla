@@ -1,9 +1,14 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
-import type { Story } from "@/types";
+import type { HeaderBanner, Story } from "@/types";
 import { useLanguage } from "@/context/LanguageContext";
 import CommentSection from "@/components/news/CommentSection";
+import LatestList from "@/components/news/LatestList";
+import AdBanner from "@/components/news/AdBanner";
+
+// Reader-selectable body text sizes (multipliers of the normal size); index 1 is the default.
+const FONT_STEPS = [0.9, 1, 1.15, 1.3];
 
 const BLOCK_RE = /<(p|h[1-6]|ul|ol|blockquote|figure|div|section)\b/i;
 
@@ -47,21 +52,33 @@ function loadCardImage(source: string) {
   });
 }
 
-function drawCardText(context: CanvasRenderingContext2D, text: string, x: number, y: number, maxWidth: number, lineHeight: number) {
-  const words = text.split(/\s+/);
+// Breaks text into lines no wider than maxWidth, using the context's current font.
+function wrapCardText(context: CanvasRenderingContext2D, text: string, maxWidth: number) {
+  const lines: string[] = [];
   let line = "";
-  let currentY = y;
-  for (const word of words) {
+  for (const word of text.split(/\s+/).filter(Boolean)) {
     const candidate = line ? `${line} ${word}` : word;
     if (context.measureText(candidate).width > maxWidth && line) {
-      context.fillText(line, x, currentY);
+      lines.push(line);
       line = word;
-      currentY += lineHeight;
     } else {
       line = candidate;
     }
   }
-  if (line) context.fillText(line, x, currentY);
+  if (line) lines.push(line);
+  return lines;
+}
+
+// A headline written as "main headline : short label" (or the reverse) is split so the
+// short part can run as the card's kicker line above the headline.
+function splitCardTitle(title: string): { kicker: string; headline: string } {
+  const parts = title.split(/\s+[:：]\s*|\s*[:：]\s+/);
+  if (parts.length === 2) {
+    const [first, second] = parts.map((part) => part.trim());
+    if (second && second.length <= 28 && first.length > second.length) return { kicker: second, headline: first };
+    if (first && first.length <= 28 && second.length > first.length) return { kicker: first, headline: second };
+  }
+  return { kicker: "", headline: title };
 }
 
 function SocialIcon({ label }: { label: string }) {
@@ -74,30 +91,46 @@ function SocialIcon({ label }: { label: string }) {
   return <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-[1.8]"><circle cx="12" cy="12" r="9" /><path strokeLinecap="round" strokeLinejoin="round" d="M8.7 8.5c.3-.4.7-.5 1.1-.2l1.1 1c.3.3.3.7.1 1l-.5.7c.7 1.3 1.7 2.3 3 3l.7-.5c.3-.2.7-.2 1 .1l1 1.1c.3.4.2.8-.2 1.1-.6.5-1.4.7-2.1.4-3.2-1.2-5.6-3.6-6.8-6.8-.3-.7-.1-1.5.4-2.1Z" /></svg>;
 }
 
-export default function ArticleReader({ story, related }: { story: Story; related: Story[] }) {
+export default function ArticleReader({
+  story,
+  related,
+  latest = [],
+  banner,
+}: {
+  story: Story;
+  related: Story[];
+  latest?: Story[];
+  banner?: HeaderBanner;
+}) {
   const { language, t } = useLanguage();
   const [progress, setProgress] = useState(0);
   const [speaking, setSpeaking] = useState(false);
   const [copied, setCopied] = useState(false);
   const [url, setUrl] = useState("");
+  const [fontStep, setFontStep] = useState(1);
   const [cardOpen, setCardOpen] = useState(false);
   const [cardPreview, setCardPreview] = useState<{ blob: Blob; url: string } | null>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
 
   const bodyHtml = useMemo(() => buildBodyHtml(story.body[language] || story.excerpt?.[language] || ""), [story, language]);
-  const minutes = useMemo(() => {
-    if (story.readMinutes) return story.readMinutes;
-    const words = plainText(`${story.title[language]} ${bodyHtml}`).trim().split(/\s+/).filter(Boolean).length;
-    return Math.max(3, Math.round(words / 200));
-  }, [bodyHtml, story, language]);
 
   const authorRaw = language === "bn" ? story.authorBn || story.author : story.author;
   const match = authorRaw.match(/^(.*?)\s*\((.+)\)\s*$/);
   const authorName = match ? match[1].trim() : authorRaw;
-  const authorRole = story.authorRole?.[language] || (match ? match[2].trim() : t("staffReporter"));
-  const initials = authorName.split(/\s+/).map((part) => part[0]).slice(0, 2).join("").toUpperCase();
   const categoryLabel = language === "bn" ? story.categoryBn || story.category : story.category;
-  const sectionLabel = (story.section || "").replace(/-/g, " ");
+  const categoryHref = `/category/${(story.section || story.category.toLowerCase()).replace(/\s+/g, "-")}`;
+  const dateLabel = story.publishedAt
+    ? new Date(story.publishedAt).toLocaleDateString(language === "bn" ? "bn-BD" : "en-GB", { day: "numeric", month: "long", year: "numeric" })
+    : story.date;
+  // The share card prints the date as "০১ নভেম্বর ২০২৬" / "01 November 2026".
+  const cardDate = story.publishedAt
+    ? new Intl.DateTimeFormat(language === "bn" ? "bn-BD" : "en-GB", { day: "2-digit", month: "long", year: "numeric" })
+        .formatToParts(new Date(story.publishedAt))
+        .filter((part) => part.type !== "literal")
+        .map((part) => part.value)
+        .join(" ")
+    : story.date || "";
+  const sectionLabel =(story.section || "").replace(/-/g, " ");
   const caption = story.imageCaption?.[language] || "";
   const credit = story.imageCredit || hostname(story.sourceUrl) || "UK Bangla Guardian";
   const pullQuote = story.pullQuote?.[language] || "";
@@ -161,54 +194,100 @@ export default function ArticleReader({ story, related }: { story: Story; relate
     const context = canvas.getContext("2d");
     if (!context) return null;
 
-    context.fillStyle = "#f4f2ec";
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    context.fillStyle = "#102f57";
-    context.fillRect(0, 0, canvas.width, 650);
+    // Card layout: cream masthead strip, photo, then a navy panel with the headline.
+    const SIDE = 58;
+    const RIGHT = 1080 - SIDE;
+    const HEADER_BOTTOM = 156;
+    const IMAGE_BOTTOM = 602;
+    const CREAM = "#faf6ee";
+    const NAVY = "#0a1f55";
+    const GOLD = "#f2b632";
+    const family = language === "bn" ? '"Hind Siliguri", "Noto Sans Bengali", sans-serif' : "Inter, sans-serif";
+    const { kicker, headline } = splitCardTitle(story.title[language]);
+    try {
+      // Canvas falls back to a system font unless the web font has finished loading.
+      await Promise.all([document.fonts.load(`700 60px ${family}`, headline), document.fonts.load(`600 26px ${family}`, headline)]);
+    } catch {
+      // The fallback font still produces a usable card.
+    }
 
+    context.fillStyle = NAVY;
+    context.fillRect(0, 0, 1080, 1080);
     try {
       const articleImage = await loadCardImage(story.image);
-      const imageRatio = Math.max(1080 / articleImage.naturalWidth, 650 / articleImage.naturalHeight);
+      const imageHeightBox = IMAGE_BOTTOM - HEADER_BOTTOM;
+      const imageRatio = Math.max(1080 / articleImage.naturalWidth, imageHeightBox / articleImage.naturalHeight);
       const imageWidth = articleImage.naturalWidth * imageRatio;
       const imageHeight = articleImage.naturalHeight * imageRatio;
-      context.drawImage(articleImage, (1080 - imageWidth) / 2, (650 - imageHeight) / 2, imageWidth, imageHeight);
-      const imageGradient = context.createLinearGradient(0, 0, 0, 650);
-      imageGradient.addColorStop(0, "rgba(16, 47, 87, 0.58)");
-      imageGradient.addColorStop(0.45, "rgba(16, 47, 87, 0.08)");
-      imageGradient.addColorStop(1, "rgba(16, 47, 87, 0.82)");
-      context.fillStyle = imageGradient;
-      context.fillRect(0, 0, 1080, 650);
+      context.save();
+      context.beginPath();
+      context.rect(0, HEADER_BOTTOM, 1080, imageHeightBox);
+      context.clip();
+      context.drawImage(articleImage, (1080 - imageWidth) / 2, HEADER_BOTTOM + (imageHeightBox - imageHeight) / 2, imageWidth, imageHeight);
+      context.restore();
     } catch {
       // Keep the branded card usable when a remote image blocks canvas access.
     }
 
+    context.fillStyle = CREAM;
+    context.fillRect(0, 0, 1080, HEADER_BOTTOM);
     try {
       const logo = await loadCardImage("/logo.png");
-      context.shadowColor = "rgba(0, 0, 0, 0.25)";
-      context.shadowBlur = 18;
-      context.drawImage(logo, 55, 45, 235, 105);
-      context.shadowBlur = 0;
+      const logoHeight = 98;
+      context.drawImage(logo, SIDE, (HEADER_BOTTOM - logoHeight) / 2, (logo.naturalWidth / logo.naturalHeight) * logoHeight, logoHeight);
     } catch {
-      context.fillStyle = "#f5c451";
-      context.font = "700 28px sans-serif";
-      context.fillText("UK Bangla Guardian", 55, 90);
+      context.fillStyle = NAVY;
+      context.font = "700 34px Inter, sans-serif";
+      context.fillText("UK Bangla Guardian", SIDE, 90);
     }
 
-    context.fillStyle = "#f5c451";
-    context.fillRect(55, 550, 110, 6);
-    context.font = "700 24px sans-serif";
-    context.fillText(categoryLabel.toUpperCase(), 55, 610);
-    context.fillStyle = "#102f57";
-    context.font = "700 20px sans-serif";
-    context.fillText("UK BANGLA GUARDIAN  •  NEWS CARD", 55, 710);
-    context.fillStyle = "#102f57";
-    context.font = "700 46px sans-serif";
-    drawCardText(context, story.title[language], 55, 775, 970, 60);
-    context.fillStyle = "#102f57";
-    context.fillRect(0, 1000, 1080, 80);
-    context.fillStyle = "#f5c451";
-    context.font = "600 22px sans-serif";
-    context.fillText(`${story.date || ""}  |  ukbanglaguardian.com`, 55, 1048);
+    // Category, right-aligned in the masthead strip with a gold underline.
+    context.textAlign = "right";
+    context.fillStyle = NAVY;
+    context.font = `700 40px ${family}`;
+    context.fillText(categoryLabel, RIGHT, 92);
+    context.fillStyle = GOLD;
+    context.fillRect(RIGHT - context.measureText(categoryLabel).width, 112, context.measureText(categoryLabel).width, 4);
+    context.textAlign = "left";
+
+    let headlineTop = 644;
+    if (kicker) {
+      context.fillStyle = GOLD;
+      context.font = `700 36px ${family}`;
+      context.fillText(kicker, SIDE, 676);
+      headlineTop = 704;
+    }
+
+    // Use the largest headline size that fits the panel; trim with an ellipsis as a last resort.
+    const headlineBottom = 962;
+    const sizes = [78, 70, 62, 54, 48, 42];
+    let size = sizes[sizes.length - 1];
+    let lines: string[] = [];
+    for (const candidate of sizes) {
+      context.font = `700 ${candidate}px ${family}`;
+      lines = wrapCardText(context, headline, RIGHT - SIDE);
+      size = candidate;
+      if (lines.length * candidate * 1.28 <= headlineBottom - headlineTop) break;
+    }
+    const lineHeight = size * 1.28;
+    const maxLines = Math.max(1, Math.floor((headlineBottom - headlineTop) / lineHeight));
+    if (lines.length > maxLines) {
+      lines = lines.slice(0, maxLines);
+      lines[maxLines - 1] = `${lines[maxLines - 1].replace(/\s+\S*$/, "")}…`;
+    }
+    context.fillStyle = "#ffffff";
+    lines.forEach((line, index) => context.fillText(line, SIDE, headlineTop + size + index * lineHeight));
+
+    context.fillStyle = GOLD;
+    context.fillRect(SIDE, 982, RIGHT - SIDE, 2);
+    context.font = `600 26px ${family}`;
+    context.fillStyle = "#ffffff";
+    context.fillText(cardDate, SIDE, 1030);
+    context.fillStyle = GOLD;
+    context.textAlign = "right";
+    context.font = "600 26px Inter, sans-serif";
+    context.fillText("ukbanglaguardian.com", RIGHT, 1030);
+    context.textAlign = "left";
 
     return new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
   };
@@ -278,13 +357,6 @@ export default function ArticleReader({ story, related }: { story: Story; relate
 
   const shareButtons = (
     <>
-      <button
-        onClick={copyLink}
-        aria-label={t("copyLink")}
-        className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-300 text-xs transition hover:border-[#0f2f57] hover:text-[#0f2f57] dark:border-slate-700 dark:hover:border-amber-400 dark:hover:text-amber-400"
-      >
-        {copied ? "✓" : "🔗"}
-      </button>
       {shareLinks.map((link) => (
         <a
           key={link.label}
@@ -292,22 +364,38 @@ export default function ArticleReader({ story, related }: { story: Story; relate
           target="_blank"
           rel="noreferrer"
           aria-label={`${t("share")} — ${link.label}`}
-          className={`flex h-9 w-9 items-center justify-center rounded-full border text-xs transition dark:border-slate-700 ${
+          className={`flex h-7 w-7 items-center justify-center rounded-full transition hover:opacity-80 ${
             link.label === "Facebook"
-              ? "border-[#1877f2]/40 text-[#1877f2] hover:border-[#1877f2]"
+              ? "bg-[#1877f2] text-white"
               : link.label === "X"
-                ? "border-slate-400 text-slate-950 hover:border-slate-950 dark:text-white dark:hover:border-white"
-                : "border-[#25d366]/50 text-[#16a34a] hover:border-[#25d366] dark:text-[#25d366]"
+                ? "text-slate-950 dark:text-white"
+                : "bg-[#25d366] text-white"
           }`}
         >
           <SocialIcon label={link.label} />
         </a>
       ))}
+      <button
+        type="button"
+        onClick={copyLink}
+        aria-label={t("copyLink")}
+        title={copied ? t("linkCopied") : t("copyLink")}
+        className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-200 text-slate-700 transition hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+      >
+        {copied ? "✓" : (
+          <svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5 fill-none stroke-current stroke-2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" />
+          </svg>
+        )}
+      </button>
     </>
   );
 
+  const toolButton = "flex items-center gap-2 rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-brand transition hover:bg-white dark:border-slate-700 dark:text-amber-400 dark:hover:bg-slate-900";
+  const fontButton = "flex h-7 min-w-8 items-center justify-center rounded border border-slate-300 bg-white px-1.5 font-serif font-bold leading-none text-slate-800 transition hover:border-brand disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100";
+
   return (
-    <main className="bg-[#f4f2ec] pb-4 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+    <main className="bg-paper pb-4 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <div className="fixed inset-x-0 top-0 z-40 h-1 bg-transparent">
         <div className="h-full bg-amber-500 transition-[width] duration-150 ease-out" style={{ width: `${progress}%` }} />
       </div>
@@ -375,113 +463,100 @@ export default function ArticleReader({ story, related }: { story: Story; relate
         </div>
       )}
 
-      <div className="mx-auto max-w-[1140px] px-4 pt-8 sm:px-6">
+      <div className="mx-auto max-w-6xl px-4 pt-5 sm:px-6">
         <div className="print-only mb-6 border-b border-slate-300 pb-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo.png" alt="UK Bangla Guardian" className="h-16 w-auto" />
         </div>
-        <div className="no-print flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
-          <Link href="/" className="transition hover:text-[#0f2f57] dark:hover:text-amber-400">
-            ← {t("backToHome")}
-          </Link>
-          <span className="flex items-center gap-2 text-red-600 dark:text-red-400">
-            <span className="h-2 w-2 animate-pulse rounded-full bg-red-600 dark:bg-red-400" />
-            {t("liveReporting")}
-          </span>
-        </div>
+        <nav aria-label="Breadcrumb" className="no-print flex flex-wrap items-center gap-x-3 text-sm text-slate-600 dark:text-slate-400">
+          <Link href="/" className="hover:text-brand dark:hover:text-amber-400">{t("home")}</Link>
+          <span aria-hidden>/</span>
+          <Link href={categoryHref} className="hover:text-brand dark:hover:text-amber-400">{categoryLabel}</Link>
+        </nav>
 
-        <div className="mx-auto mt-8 flex max-w-[720px] gap-8 lg:max-w-[788px]">
-          <aside className="no-print hidden w-10 shrink-0 lg:block">
-            <div className="sticky top-24 flex flex-col items-center gap-3">
-              <span className="mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">{t("share")}</span>
-              {shareButtons}
-            </div>
-          </aside>
+        <div className="mt-4 grid gap-10 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-7">
+          <article className="min-w-0">
+            <Link
+              href={categoryHref}
+              className="inline-block bg-accent py-1 pl-3 pr-5 text-sm font-bold text-white"
+              style={{ clipPath: "polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%)" }}
+            >
+              {categoryLabel}
+            </Link>
 
-          <article className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-bold uppercase tracking-[0.16em] text-[#0f2f57] dark:text-amber-400">
-              <Link href={`/category/${(story.section || story.category.toLowerCase()).replace(/\s+/g, "-")}`} className="hover:underline">
-                {categoryLabel}
-              </Link>
-              {sectionLabel && sectionLabel.toLowerCase() !== story.category.toLowerCase() && (
-                <>
-                  <span className="text-slate-400">›</span>
-                  <span className="text-slate-500 dark:text-slate-400">{sectionLabel}</span>
-                </>
-              )}
-            </div>
-
-            <h1 className="mt-4 font-serif text-[1.75rem] font-black leading-[1.12] tracking-[-0.01em] text-balance sm:text-[2.7rem]">
+            <h1 className="mt-3 font-serif text-[1.7rem] font-bold leading-[1.25] text-slate-950 text-balance dark:text-slate-50 sm:text-[2.2rem]">
               {story.title[language]}
             </h1>
 
             {story.excerpt?.[language] && (
-              <p className="mt-5 border-l-2 border-slate-300 pl-4 font-serif text-lg italic leading-relaxed text-slate-600 dark:border-slate-700 dark:text-slate-300 sm:text-xl">
+              <p className="mt-3 text-lg leading-relaxed text-slate-700 dark:text-slate-300">
                 {story.excerpt[language]}
               </p>
             )}
 
-            <div className="mt-7 flex flex-wrap items-center gap-4 border-y border-slate-300 py-4 dark:border-slate-800">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#0f2f57] text-sm font-bold text-white dark:bg-amber-500 dark:text-slate-950">
-                {initials}
+            <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-3 border-y border-slate-300 py-3 text-[13px] dark:border-slate-800">
+              <span className="flex items-center gap-2 font-semibold">
+                <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-2">
+                  <circle cx="12" cy="8" r="4" />
+                  <path strokeLinecap="round" d="M4 21c0-4 3.6-6 8-6s8 2 8 6" />
+                </svg>
+                {authorName}
               </span>
-              <div className="min-w-0">
-                <div className="font-semibold leading-tight">{authorName}</div>
-                <div className="text-[11px] uppercase tracking-[0.14em] text-slate-500">{authorRole}</div>
-              </div>
-              <div className="ml-auto flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.12em] text-slate-500">
-                {story.date && <span>{story.date}</span>}
-                {story.date && <span aria-hidden>•</span>}
-                <span>{minutes} {t("minRead")}</span>
-                {story.readCount != null && (
-                  <>
-                    <span aria-hidden>•</span>
-                    <span>{story.readCount.toLocaleString(language === "bn" ? "bn-BD" : "en-GB")} {t("reads")}</span>
-                  </>
-                )}
-              </div>
+              {dateLabel && (
+                <span className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                  <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4 fill-none stroke-current stroke-2">
+                    <rect x="3.5" y="5" width="17" height="15.5" rx="2" />
+                    <path strokeLinecap="round" d="M8 3v4m8-4v4M3.5 10h17" />
+                  </svg>
+                  {dateLabel}
+                </span>
+              )}
+              <span className="no-print flex items-center gap-2">
+                <span className="font-semibold">{t("shareLabel")}</span>
+                {shareButtons}
+              </span>
+              <span className="no-print flex items-center gap-1.5 sm:ml-auto">
+                <span className="mr-1 text-slate-600 dark:text-slate-400">{t("fontSize")}</span>
+                <button type="button" onClick={() => setFontStep((step) => Math.max(0, step - 1))} disabled={fontStep === 0} aria-label="Smaller text" className={`${fontButton} text-xs`}>A−</button>
+                <button type="button" onClick={() => setFontStep(1)} aria-label="Normal text" className={`${fontButton} text-sm`}>A</button>
+                <button type="button" onClick={() => setFontStep((step) => Math.min(FONT_STEPS.length - 1, step + 1))} disabled={fontStep === FONT_STEPS.length - 1} aria-label="Larger text" className={`${fontButton} text-base`}>A+</button>
+              </span>
             </div>
 
-            <div className="no-print mt-3 flex items-center gap-2">
-              <button
-                onClick={speak}
-                className="flex items-center gap-2 rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-[#0f2f57] transition hover:bg-white dark:border-slate-700 dark:text-amber-400 dark:hover:bg-slate-900"
-              >
+            <figure className="mt-5">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={story.image} alt={story.title.en} className="w-full rounded-md object-cover" />
+              <figcaption className="mt-2 border-b border-slate-300 pb-3 text-sm italic text-slate-500 dark:border-slate-800 dark:text-slate-400">
+                {caption ? `${caption} ` : ""}<span className="not-italic">— {credit}</span>
+              </figcaption>
+            </figure>
+
+            <div className="no-print mt-4 flex flex-wrap items-center gap-2">
+              <button type="button" onClick={speak} className={toolButton}>
                 🔊 {speaking ? t("stop") : t("listen")}
               </button>
-              <button
-                onClick={printArticle}
-                aria-label={t("print")}
-                className="flex items-center gap-2 rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold text-[#0f2f57] transition hover:bg-white dark:border-slate-700 dark:text-amber-400 dark:hover:bg-slate-900"
-              >
+              <button type="button" onClick={printArticle} aria-label={t("print")} className={toolButton}>
                 🖨 {t("print")}
               </button>
               <button
+                type="button"
                 onClick={openCardPreview}
                 aria-label={t("saveCard")}
                 className="flex items-center gap-2 rounded-full border border-amber-500 bg-amber-400 px-3 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-amber-300"
               >
                 ▣ {t("saveCard")}
               </button>
-              <div className="ml-auto flex gap-2 lg:hidden">{shareButtons}</div>
             </div>
-
-            <figure className="mt-6">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={story.image} alt={story.title.en} className="w-full rounded-md object-cover" />
-              <figcaption className="mt-2 text-xs italic text-slate-500 dark:text-slate-400">
-                {caption ? `${caption} ` : ""}<span className="not-italic">— {credit}</span>
-              </figcaption>
-            </figure>
 
             <div
               ref={bodyRef}
-              className="article-body article-dropcap mt-8"
+              className="article-body mt-6"
+              style={{ "--article-scale": FONT_STEPS[fontStep] } as CSSProperties}
               dangerouslySetInnerHTML={{ __html: bodyHtml }}
             />
 
             {pullQuote && (
-              <blockquote className="my-8 border-l-[3px] border-amber-500 pl-5 font-serif text-2xl italic leading-snug text-[#0f2f57] dark:border-amber-400 dark:text-[#f0ead9]">
+              <blockquote className="my-8 border-l-[3px] border-accent pl-5 font-serif text-2xl italic leading-snug text-brand dark:border-amber-400 dark:text-[#f0ead9]">
                 {pullQuote}
               </blockquote>
             )}
@@ -491,7 +566,7 @@ export default function ArticleReader({ story, related }: { story: Story; relate
                 href={story.sourceUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-[#0f2f57] underline underline-offset-2 dark:text-amber-400"
+                className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-brand underline underline-offset-2 dark:text-amber-400"
               >
                 {t("sourceReport")} ↗
               </a>
@@ -508,30 +583,38 @@ export default function ArticleReader({ story, related }: { story: Story; relate
                   </span>
                 ))}
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{t("share")}</span>
+              <div className="flex items-center gap-2 text-sm">
+                <span className="font-semibold">{t("shareLabel")}</span>
                 {shareButtons}
               </div>
             </div>
 
             <CommentSection slug={story.id} initialCount={story.commentCount ?? 0} />
           </article>
+
+          <aside className="no-print min-w-0 lg:border-l lg:border-slate-300 lg:pl-7 dark:lg:border-slate-800">
+            <div className="lg:sticky lg:top-6">
+              <LatestList stories={latest} />
+              {banner && <AdBanner banner={banner} />}
+            </div>
+          </aside>
         </div>
 
         {related.length > 0 && (
-          <section className="mx-auto mt-16 max-w-[940px]">
-            <h2 className="mb-5 border-b-2 border-[#0f2f57] pb-2 font-serif text-xl font-black dark:border-amber-400">
+          <section className="mt-14">
+            <h2 className="mb-5 flex items-center gap-3 border-b border-brand/60 pb-2 font-serif text-2xl font-bold dark:border-slate-700">
+              <span aria-hidden className="h-6 w-1 bg-accent dark:bg-amber-400" />
               {t("readNext")}
             </h2>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {related.map((item) => (
                 <Link key={item.id} href={`/article/${item.id}`} className="group block">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={item.image} alt={item.title.en} className="mb-3 h-40 w-full rounded-md object-cover" />
-                  <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#0f2f57] dark:text-amber-400">
+                  <img src={item.image} alt={item.title.en} className="mb-3 aspect-[16/10] w-full rounded-md object-cover" />
+                  <span className="text-xs font-semibold text-accent dark:text-amber-400">
                     {language === "bn" ? item.categoryBn || item.category : item.category}
                   </span>
-                  <h3 className="mt-1.5 font-serif text-lg font-bold leading-snug transition group-hover:text-[#0f2f57] dark:group-hover:text-amber-400">
+                  <h3 className="mt-1 font-serif text-lg font-bold leading-snug transition group-hover:text-brand dark:group-hover:text-amber-400">
                     {item.title[language]}
                   </h3>
                 </Link>

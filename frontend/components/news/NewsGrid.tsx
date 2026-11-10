@@ -46,12 +46,11 @@ export default function NewsGrid({
               />
             </div>
             <div className={`flex flex-1 flex-col ${compact ? "p-3 sm:p-4" : "p-5"}`}>
-              <span className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[#0f2f57] dark:text-amber-400">
-                <span aria-hidden className="h-[2px] w-4 bg-amber-500" />
+              <span className="text-xs font-bold text-accent dark:text-amber-400">
                 {view === "bn" ? story.categoryBn || story.category : story.category}
               </span>
               <h3
-                className={`mt-2 font-serif font-bold leading-snug text-slate-900 decoration-amber-500 decoration-2 underline-offset-4 group-hover:underline dark:text-slate-100 ${
+                className={`mt-1.5 font-serif font-bold leading-snug text-brand-dark decoration-accent decoration-2 underline-offset-4 group-hover:underline dark:text-slate-100 dark:decoration-amber-400 ${
                   compact ? "line-clamp-3 text-[15px] sm:text-base" : "line-clamp-3 text-lg sm:text-[1.15rem]"
                 }`}
               >
@@ -68,7 +67,7 @@ export default function NewsGrid({
                   aria-label={saved ? "Remove from saved" : "Save article"}
                   aria-pressed={saved}
                   className={`-mr-1 rounded-full p-1.5 transition hover:bg-slate-100 dark:hover:bg-slate-800 ${
-                    saved ? "text-amber-600 dark:text-amber-400" : "text-slate-400 hover:text-[#0f2f57] dark:hover:text-amber-400"
+                    saved ? "text-accent dark:text-amber-400" : "text-slate-400 hover:text-brand dark:hover:text-amber-400"
                   }`}
                 >
                   <BookmarkIcon filled={saved} />

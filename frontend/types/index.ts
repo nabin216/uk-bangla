@@ -11,6 +11,7 @@ export type Story = {
   authorRole?: LocalizedText;
   authorBio?: LocalizedText;
   date: string;
+  publishedAt?: string;      // ISO timestamp, for "x minutes ago" labels
   image: string;
   imageCaption?: LocalizedText;
   imageCredit?: string;
@@ -66,6 +67,7 @@ export type SiteChrome = {
   footer_links: FooterLink[];
   sections: SiteSection[];
   ads?: Advertisement[];
+  ticker?: LocalizedText[];
   masthead: MastheadMember[];
   settings: {
     brand_name: string;

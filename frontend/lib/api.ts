@@ -76,6 +76,7 @@ export function toStory(article: ApiArticle): Story {
     authorRole: dual(article.author?.role),
     authorBio: dual(article.author?.bio),
     date: article.date ? new Date(article.date).toLocaleDateString("en-GB") : "",
+    publishedAt: article.date || undefined,
     image: image || "/uk-bangla-guardian-logo-1.png",
     imageCaption: dual(article.image_caption),
     imageCredit: article.image_credit || "",
