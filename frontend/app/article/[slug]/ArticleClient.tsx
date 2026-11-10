@@ -1,0 +1,89 @@
+"use client";
+import { useEffect, useMemo, useState } from "react";
+import { useParams } from "next/navigation";
+import ArticleReader from "@/components/news/ArticleReader";
+import { storiesData } from "@/data/storiesData";
+import { API_URL, decodeSlug, fetchSite, fetchStory, fetchStories, trackStoryView } from "@/lib/api";
+import type { HeaderBanner, Story } from "@/types";
+import { useLanguage } from "@/context/LanguageContext";
+
+function pickRelated(all: Story[], current: Story) {
+  const others = all.filter((item) => item.id !== current.id);
+  const sameCategory = others.filter((item) => item.category.toLowerCase() === current.category.toLowerCase());
+  return [...sameCategory, ...others.filter((item) => !sameCategory.includes(item))].slice(0, 3);
+}
+
+export default function ArticleClient() {
+  const params = useParams<{ slug: string }>();
+  const slug = decodeSlug(params.slug);
+  const { t } = useLanguage();
+  const [story, setStory] = useState<Story | null>(API_URL ? null : storiesData.find((item) => item.id === slug) || null);
+  const [pool, setPool] = useState<Story[]>(API_URL ? [] : storiesData);
+  const [loading, setLoading] = useState(Boolean(API_URL));
+  const [error, setError] = useState(false);
+  const [banner, setBanner] = useState<HeaderBanner | undefined>();
+
+  // The compact inner-page header has no banner, so it runs in the article sidebar instead.
+  useEffect(() => {
+    if (!API_URL) return;
+    let alive = true;
+    fetchSite().then((site) => { if (alive) setBanner(site.settings.header_banner); }).catch(() => undefined);
+    return () => { alive = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!API_URL) return;
+    const timer = window.setTimeout(() => setLoading(true), 0);
+    Promise.all([fetchStory(slug), fetchStories("?limit=12").catch(() => [] as Story[])])
+      .then(([detail, latest]) => {
+        setStory(detail);
+        setPool(latest.length ? latest : storiesData);
+      })
+      .catch(() => {
+        setError(true);
+        setStory(storiesData.find((item) => item.id === slug) || null);
+        setPool(storiesData);
+      })
+      .finally(() => {
+        window.clearTimeout(timer);
+        setLoading(false);
+      });
+    return () => window.clearTimeout(timer);
+  }, [slug]);
+
+  useEffect(() => {
+    if (!API_URL) return;
+    let active = true;
+    trackStoryView(slug, window.location.pathname).then((readCount) => {
+      if (active && readCount != null) {
+        setStory((current) => (current ? { ...current, readCount } : current));
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [slug]);
+
+  const related = useMemo(() => (story ? pickRelated(pool, story) : []), [pool, story]);
+  const latest = useMemo(() => pool.filter((item) => item.id !== story?.id).slice(0, 5), [pool, story]);
+
+  if (loading) return <main className="mx-auto max-w-3xl p-16 text-sm text-slate-500">{t("storyLoading")}</main>;
+  if (!story) {
+    return (
+      <main className="mx-auto max-w-3xl p-16 text-sm text-slate-500">
+        {error ? t("storyUnavailable") : t("storyMissing")}
+      </main>
+    );
+  }
+
+  return (
+    <>
+      <ArticleReader story={story} related={related} latest={latest} banner={banner} />
+      {error && (
+        <p className="fixed bottom-4 left-1/2 z-[60] -translate-x-1/2 rounded bg-amber-100 px-4 py-2 text-sm text-amber-900">
+          {t("serviceDown")}
+        </p>
+      )}
+    </>
+  );
+}

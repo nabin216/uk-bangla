@@ -1,0 +1,107 @@
+{% extends "wagtailadmin/base.html" %}
+{% load wagtailadmin_tags %}
+
+{% block titletag %}Newsroom dashboard{% endblock %}
+
+{% block content %}
+<div class="nice-padding">
+  <h1 style="margin: 24px 0 20px; font-size: 22px;">Newsroom dashboard</h1>
+  <style>
+    .nd-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: 28px; }
+    .nd-card { border: 1px solid var(--w-color-border-furniture, #e0e0e0); border-radius: 8px; padding: 16px 18px; background: var(--w-color-surface-page, #fff); }
+    .nd-card .nd-label { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--w-color-text-meta, #5c5c5c); }
+    .nd-card .nd-value { font-size: 30px; font-weight: 700; line-height: 1.1; margin-top: 6px; }
+    .nd-card .nd-sub { font-size: 12px; color: var(--w-color-text-meta, #5c5c5c); margin-top: 4px; }
+    .nd-section { margin-bottom: 32px; }
+    .nd-section h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 12px; }
+    .nd-spark { display: flex; align-items: flex-end; gap: 4px; height: 90px; padding: 8px 0; }
+    .nd-spark .bar { flex: 1; background: var(--w-color-secondary, #2e1f5e); border-radius: 3px 3px 0 0; min-height: 2px; }
+    .nd-spark .bar span { display: block; }
+    .nd-table { width: 100%; border-collapse: collapse; }
+    .nd-table th, .nd-table td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--w-color-border-furniture, #e0e0e0); font-size: 14px; vertical-align: top; }
+    .nd-table th { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--w-color-text-meta, #5c5c5c); }
+    .nd-pill { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px; background: #fde68a; color: #92400e; }
+    .nd-pill.ok { background: #bbf7d0; color: #166534; }
+    .nd-actions a { margin-right: 10px; }
+  </style>
+
+  <div class="nd-grid">
+    <div class="nd-card">
+      <div class="nd-label">Total visitors</div>
+      <div class="nd-value">{{ unique_total }}</div>
+      <div class="nd-sub">{{ total_views }} page views all-time</div>
+    </div>
+    <div class="nd-card">
+      <div class="nd-label">Today's visitors</div>
+      <div class="nd-value">{{ unique_today }}</div>
+      <div class="nd-sub">{{ today_views }} views today</div>
+    </div>
+    <div class="nd-card">
+      <div class="nd-label">Views this week</div>
+      <div class="nd-value">{{ week_views }}</div>
+      <div class="nd-sub">last 7 days</div>
+    </div>
+    <div class="nd-card">
+      <div class="nd-label">Comments</div>
+      <div class="nd-value">{{ total_comments }}</div>
+      <div class="nd-sub">{{ today_comments }} today &middot; {{ pending_comments }} hidden</div>
+    </div>
+    <div class="nd-card">
+      <div class="nd-label">Newsletter</div>
+      <div class="nd-value"><a href="{% url 'wagtailsnippets_news_newslettersubscription:list' %}">{{ subscribers }}</a></div>
+      <div class="nd-sub">active subscribers &middot; <a href="{% url 'wagtailsnippets_news_newslettersubscription:list' %}">view list</a></div>
+    </div>
+  </div>
+
+  <div class="nd-section">
+    <h2>Views &mdash; last 14 days</h2>
+    <div class="nd-spark">
+      {% for point in spark %}
+        <div class="bar" style="height: {% widthratio point.n spark_max 100 %}%" title="{{ point.day }}: {{ point.n }}"></div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="nd-section">
+    <h2>Trending posts (last 7 days)</h2>
+    <table class="nd-table">
+      <thead><tr><th>Title</th><th>Section</th><th>Views (7d)</th><th>Reads all-time</th></tr></thead>
+      <tbody>
+        {% for post in trending %}
+          <tr>
+            <td><a href="{% url 'wagtailadmin_pages:edit' post.pk %}">{{ post.title }}</a></td>
+            <td>{{ post.section.name_en }}</td>
+            <td>{{ post.recent_views }}</td>
+            <td>{{ post.read_count }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="4">No data yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="nd-section">
+    <h2>Recent comments</h2>
+    <table class="nd-table">
+      <thead><tr><th>Comment</th><th>On</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for comment in recent_comments %}
+          <tr>
+            <td><strong>{{ comment.name }}</strong><br>{{ comment.body|truncatechars:140 }}<br><small>{{ comment.created_at }}</small></td>
+            <td>{% if comment.article %}<a href="{% url 'wagtailadmin_pages:edit' comment.article.pk %}">{{ comment.article.title|truncatechars:40 }}</a>{% else %}&mdash;{% endif %}</td>
+            <td>{% if comment.is_approved %}<span class="nd-pill ok">Visible</span>{% else %}<span class="nd-pill">Hidden</span>{% endif %}</td>
+            <td class="nd-actions">
+              <a href="{% url 'wagtailsnippets_news_comment:edit' comment.pk %}">Edit</a>
+              <a href="{% url 'wagtailsnippets_news_comment:delete' comment.pk %}">Delete</a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="4">No comments yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p style="margin-top:12px"><a href="{% url 'wagtailsnippets_news_comment:list' %}">Manage all comments &rarr;</a></p>
+  </div>
+</div>
+{% endblock %}
