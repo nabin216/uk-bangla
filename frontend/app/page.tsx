@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import TickerBanner from "@/components/news/TickerBanner";
 import LeadStoryHero from "@/components/news/LeadStoryHero";
 import LatestList from "@/components/news/LatestList";
+import SectionBlock from "@/components/news/SectionBlock";
 import SectionHeading from "@/components/news/SectionHeading";
 import NewsGrid from "@/components/news/NewsGrid";
 import SponsoredCard from "@/components/news/SponsoredCard";
@@ -27,10 +28,10 @@ const FALLBACK_HEADINGS: Record<keyof HomeHeadings, string> = {
 // never in the Bangla-edition feeds. Accept both slugs seen in the wild.
 const isEnglishNews = (s: Story) => s.section === "english-news" || s.section === "english";
 const ENGLISH_SLUGS = ["english-news", "english"];
-// Each section shows one row of cards; sections with no stories are skipped.
+// Each section block shows a lead story plus two headlines; sections with no stories are skipped.
 const SECTION_BLOCK_SIZE = 3;
-// A "between sections" ad goes after every this many sections.
-const SECTIONS_PER_AD = 3;
+// Section blocks sit two to a row; a "between sections" ad goes after every this many blocks.
+const SECTIONS_PER_AD = 4;
 const LATEST_COUNT = 5;
 
 type SectionStories = { section: SiteSection; stories: Story[] };
@@ -188,17 +189,17 @@ export default function Home() {
                   : null;
                 return (
                   <div key={row[0].section.slug}>
-                    {row.map(({ section, stories: sectionStories }) => (
-                      <section key={section.slug} className="mb-10">
-                        <SectionHeading
-                          title={language === "bn" ? section.name_bn || section.name : section.name}
-                          href={`/category/${section.slug}`}
-                          moreLabel={t("readMore")}
-                        />
-                        <NewsGrid stories={sectionStories} onOpen={openStory} />
-                      </section>
-                    ))}
-                    {ad && <AdBanner banner={ad} />}
+                    <div className="grid gap-y-10 md:grid-cols-2">
+                      {row.map(({ section, stories: sectionStories }) => (
+                        <div
+                          key={section.slug}
+                          className="min-w-0 border-slate-200 dark:border-slate-800 md:odd:border-r md:odd:pr-7 md:even:pl-7"
+                        >
+                          <SectionBlock section={section} stories={sectionStories} />
+                        </div>
+                      ))}
+                    </div>
+                    {ad ? <AdBanner banner={ad} /> : <div className="h-10" />}
                   </div>
                 );
               })}
