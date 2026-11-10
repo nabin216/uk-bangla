@@ -19,10 +19,10 @@ export default function LeadStoryHero({ story, as: Heading = "h1" }: { story: St
         />
       </Link>
       <div className="flex min-w-0 flex-col justify-center">
-        <span className="text-sm font-semibold text-accent dark:text-amber-400">
+        <span className="category-tag text-sm">
           {language === "bn" ? story.categoryBn || story.category : story.category}
         </span>
-        <Heading className="mt-2 font-serif text-2xl font-bold leading-[1.25] text-slate-950 dark:text-slate-50 sm:text-[1.7rem] lg:text-[1.9rem]">
+        <Heading className="mt-3 font-serif text-2xl font-bold leading-[1.25] text-slate-950 dark:text-slate-50 sm:text-[1.7rem] lg:text-[1.9rem]">
           <Link href={href} className="hover:text-brand dark:hover:text-amber-400">{story.title[language]}</Link>
         </Heading>
         <p className="mt-3 line-clamp-4 text-[15px] leading-relaxed text-slate-600 dark:text-slate-300">

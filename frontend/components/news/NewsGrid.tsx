@@ -46,11 +46,11 @@ export default function NewsGrid({
               />
             </div>
             <div className={`flex flex-1 flex-col ${compact ? "p-3 sm:p-4" : "p-5"}`}>
-              <span className="text-xs font-bold text-accent dark:text-amber-400">
+              <span className="category-tag text-xs">
                 {view === "bn" ? story.categoryBn || story.category : story.category}
               </span>
               <h3
-                className={`mt-1.5 font-serif font-bold leading-snug text-brand-dark decoration-accent decoration-2 underline-offset-4 group-hover:underline dark:text-slate-100 dark:decoration-amber-400 ${
+                className={`mt-2.5 font-serif font-bold leading-snug text-brand-dark decoration-accent decoration-2 underline-offset-4 group-hover:underline dark:text-slate-100 dark:decoration-amber-400 ${
                   compact ? "line-clamp-3 text-[15px] sm:text-base" : "line-clamp-3 text-lg sm:text-[1.15rem]"
                 }`}
               >

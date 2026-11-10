@@ -478,8 +478,7 @@ export default function ArticleReader({
           <article className="min-w-0">
             <Link
               href={categoryHref}
-              className="inline-block bg-accent py-1 pl-3 pr-5 text-sm font-bold text-white"
-              style={{ clipPath: "polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%)" }}
+              className="category-tag text-sm"
             >
               {categoryLabel}
             </Link>

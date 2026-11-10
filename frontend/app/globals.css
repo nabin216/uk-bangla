@@ -46,6 +46,10 @@ body { margin: 0; font-family: var(--font-sans); font-size: 16px; line-height: 1
 .animate-marquee { animation: marquee 25s linear infinite; }
 .print-only { display: none; }
 
+/* Slanted red category label used on articles, cards and the lead story */
+.category-tag { display: inline-block; align-self: flex-start; background: var(--color-accent); color: #fff; font-weight: 700; line-height: 1.5; padding: 0.15rem 1.1rem 0.15rem 0.65rem; clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%); }
+.dark .category-tag { background: #fbbf24; color: #0f172a; }
+
 /* Article reading page */
 .article-body { font-family: var(--font-reading); font-size: calc(1.2rem * var(--article-scale, 1)); line-height: 1.75; color: #1f2937; }
 .dark .article-body { color: #d9d6cd; }
