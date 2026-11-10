@@ -27,7 +27,6 @@ export const dictionaries: Record<Language, Translation> = {
     cardPreview: "News card preview", preparingCard: "Preparing card…", download: "Download", close: "Close",
     latest: "Latest", latestNews: "Latest news", readMore: "Read more", more: "More",
     shareLabel: "Share:", fontSize: "Text size:",
-    allNews: "All news", viewAllNews: "View all news", loadMore: "Show more news",
   },
   bn: {
     menu: "মেনু", saved: "সংরক্ষিত", home: "হোম", uk: "যুক্তরাজ্য", bangladesh: "বাংলাদেশ",
@@ -55,6 +54,5 @@ export const dictionaries: Record<Language, Translation> = {
     cardPreview: "নিউজ কার্ড প্রিভিউ", preparingCard: "কার্ড তৈরি হচ্ছে…", download: "ডাউনলোড", close: "বন্ধ করুন",
     latest: "সর্বশেষ", latestNews: "সর্বশেষ সংবাদ", readMore: "আরও পড়ুন", more: "আরও",
     shareLabel: "শেয়ার করুন:", fontSize: "অক্ষর আকার:",
-    allNews: "সব খবর", viewAllNews: "সব সংবাদ দেখুন", loadMore: "আরও সংবাদ দেখুন",
   },
 };

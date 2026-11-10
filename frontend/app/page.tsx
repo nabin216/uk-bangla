@@ -7,7 +7,6 @@ import LatestList from "@/components/news/LatestList";
 import SectionBlock from "@/components/news/SectionBlock";
 import SectionHeading from "@/components/news/SectionHeading";
 import NewsGrid from "@/components/news/NewsGrid";
-import MoreStories from "@/components/news/MoreStories";
 import SponsoredCard from "@/components/news/SponsoredCard";
 import MostRead from "@/components/news/MostRead";
 import AdBanner from "@/components/news/AdBanner";
@@ -34,8 +33,6 @@ const SECTION_BLOCK_SIZE = 4;
 // Section blocks sit two to a row; a "between sections" ad goes after every this many blocks.
 const SECTIONS_PER_AD = 4;
 const LATEST_COUNT = 5;
-// Category tabs shown on the "read more" grid, after the "all news" tab.
-const MORE_TABS = 5;
 
 type SectionStories = { section: SiteSection; stories: Story[] };
 
@@ -145,8 +142,8 @@ export default function Home() {
   const cmsTicker = (site?.ticker ?? []).map((item) => item[language] || item.en).filter(Boolean);
   const tickerItems = cmsTicker.length ? cmsTicker : feed.slice(0, 5).map((s) => s.title[language]);
   const showSearchResults = Boolean(searchQuery) && !loading;
-  // The "read more" grid: everything in the feed except the lead and sponsored stories.
-  const moreAll = feed.filter((s) => s.id !== hero?.id && s.id !== sponsor?.id);
+  // Without live section data (no API, or it is down) the rest of the feed fills the page instead.
+  const feedFallback = !API_URL || apiError ? feed.filter((s) => s.id !== hero?.id && s.id !== sponsor?.id) : [];
 
   return (
     <>
@@ -203,7 +200,12 @@ export default function Home() {
                 );
               })}
 
-              <MoreStories all={moreAll} tabs={sectionBlocks.slice(0, MORE_TABS)} onOpen={openStory} />
+              {feedFallback.length > 0 && (
+                <div className="mb-10">
+                  <SectionHeading title={heading("more")} />
+                  <NewsGrid stories={feedFallback.slice(0, 8)} onOpen={openStory} compact />
+                </div>
+              )}
 
               {english.length > 0 && (
                 <div className="mb-10">
