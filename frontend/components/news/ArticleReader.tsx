@@ -42,7 +42,23 @@ function hostname(url?: string) {
   }
 }
 
-function loadCardImage(source: string) {
+// The API host and the page host can differ only by "www." (both serve the same files).
+// Canvas needs same-origin images, so such URLs are loaded from the page's own origin.
+function sameOriginUrl(source: string) {
+  try {
+    const url = new URL(source, window.location.href);
+    const bare = (host: string) => host.replace(/^www\./, "");
+    if (url.origin !== window.location.origin && bare(url.hostname) === bare(window.location.hostname)) {
+      return `${window.location.origin}${url.pathname}${url.search}`;
+    }
+  } catch {
+    // Fall through to the original URL.
+  }
+  return source;
+}
+
+function loadCardImage(rawSource: string) {
+  const source = sameOriginUrl(rawSource);
   return new Promise<HTMLImageElement>((resolve, reject) => {
     const image = new Image();
     image.crossOrigin = "anonymous";
